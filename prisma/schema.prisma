@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  studentProfile StudentProfile?
+  tutorSessions  TutorSession[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model StudentProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  gradeLevel          String?
+  subjects            String[] // array of subjects
+  shortTermGoals      String?
+  longTermGoals       String?
+  explanationStyle    String   @default("balanced") // concise, balanced, detailed
+  explanationLength   String   @default("medium") // short, medium, long
+  difficultyLevel     String   @default("medium") // easy, medium, hard, adaptive
+  interests           String[] // hobbies and interests for personalization
+  onboardingCompleted Boolean  @default(false)
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjectMastery  SubjectMastery[]
+  mistakePatterns MistakePattern[]
+}
+
+model SubjectMastery {
+  id               String   @id @default(cuid())
+  studentProfileId String
+  subject          String
+  topic            String
+  masteryScore     Float    @default(0) // 0-100
+  confidenceLevel  Float    @default(0) // 0-100
+  totalAttempts    Int      @default(0)
+  correctAttempts  Int      @default(0)
+  lastPracticed    DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, subject, topic])
+}
+
+model MistakePattern {
+  id               String   @id @default(cuid())
+  studentProfileId String
+  subject          String
+  topic            String
+  mistakeType      String
+  description      String
+  frequency        Int      @default(1)
+  lastSeen         DateTime @default(now())
+  resolved         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId, subject])
+}
+
+model TutorSession {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String?
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  topicsCovered    String[]
+  understood       String[]
+  struggled        String[]
+  reviewNext       String[]
+  summaryText      String?
+  summarized       Boolean  @default(false)
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages SessionMessage[]
+}
+
+model SessionMessage {
+  id             String   @id @default(cuid())
+  tutorSessionId String
+  role           String   // "user" or "assistant"
+  content        String
+  createdAt      DateTime @default(now())
+
+  tutorSession TutorSession @relation(fields: [tutorSessionId], references: [id], onDelete: Cascade)
+
+  @@index([tutorSessionId, createdAt])
+}
