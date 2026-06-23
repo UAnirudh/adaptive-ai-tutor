@@ -46,20 +46,51 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ profile });
   } catch (error) {
-    console.error("Onboarding error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Onboarding error:", message, error);
+
+    if (message.includes("Database") || message.includes("connect")) {
+      return NextResponse.json(
+        { error: "Database error. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to save profile. Please try again." },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const profile = await prisma.studentProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    return NextResponse.json({ profile });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Onboarding GET error:", message, error);
+
+    if (message.includes("Database") || message.includes("connect")) {
+      return NextResponse.json(
+        { error: "Database error. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to load profile. Please try again." },
+      { status: 500 }
+    );
   }
-
-  const profile = await prisma.studentProfile.findUnique({
-    where: { userId: session.user.id },
-  });
-
-  return NextResponse.json({ profile });
 }

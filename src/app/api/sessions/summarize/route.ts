@@ -81,7 +81,27 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ summary });
   } catch (error) {
-    console.error("Summarization error:", error);
-    return NextResponse.json({ error: "Failed to summarize session" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Summarization error:", message, error);
+
+    if (message.includes("API") || message.includes("Gemini")) {
+      return NextResponse.json(
+        { error: "AI service unavailable. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    if (message.includes("Database") || message.includes("connect")) {
+      return NextResponse.json(
+        { error: "Database error. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to summarize session. Please try again." },
+      { status: 500 }
+    );
   }
 }

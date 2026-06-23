@@ -86,7 +86,27 @@ export async function POST(request: Request) {
       sessionId: tutorSession.id,
     });
   } catch (error) {
-    console.error("Chat error:", error);
-    return NextResponse.json({ error: "Failed to generate response" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Chat error:", message, error);
+
+    if (message.includes("API") || message.includes("Gemini")) {
+      return NextResponse.json(
+        { error: "AI service unavailable. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    if (message.includes("Database") || message.includes("connect")) {
+      return NextResponse.json(
+        { error: "Database error. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to generate response. Please try again." },
+      { status: 500 }
+    );
   }
 }

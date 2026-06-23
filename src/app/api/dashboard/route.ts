@@ -71,7 +71,20 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Dashboard error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Dashboard error:", message, error);
+
+    if (message.includes("Database") || message.includes("connect")) {
+      return NextResponse.json(
+        { error: "Database error. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to load dashboard. Please try again." },
+      { status: 500 }
+    );
   }
 }

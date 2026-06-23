@@ -42,7 +42,27 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
   } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Registration error:", message, error);
+
+    if (message.includes("DATABASE_URL")) {
+      return NextResponse.json(
+        { error: "Database not configured. Contact support." },
+        { status: 503 }
+      );
+    }
+
+    if (message.includes("connect")) {
+      return NextResponse.json(
+        { error: "Database connection failed. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to create account. Please try again." },
+      { status: 500 }
+    );
   }
 }
