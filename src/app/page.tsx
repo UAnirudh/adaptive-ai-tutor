@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Brain, Target, TrendingUp } from "lucide-react";
 
 export default async function Home() {
-  const session = await auth();
-  if (session?.user) {
-    redirect("/dashboard");
+  try {
+    const session = await auth();
+    if (session?.user) {
+      redirect("/dashboard");
+    }
+  } catch {
+    // Auth check failed (DB not ready, etc.) — show landing page
   }
 
   return (

@@ -3,8 +3,15 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function proxy(request: NextRequest) {
-  const token = await getToken({ req: request });
   const { pathname } = request.nextUrl;
+
+  let token = null;
+  try {
+    token = await getToken({ req: request });
+  } catch {
+    // Token check failed — allow request through
+    return NextResponse.next();
+  }
 
   const protectedPaths = ["/dashboard", "/chat", "/onboarding"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
