@@ -72,7 +72,7 @@ export async function saveMemoryImport(
       sourceLabel: input.sourceLabel || null,
       rawText: input.rawText,
       extractedSummary: input.extractedSummary || null,
-      learnerSignals: input.learnerSignals as Prisma.InputJsonValue | undefined,
+      learnerSignals: input.learnerSignals as unknown as Prisma.InputJsonValue | undefined,
     },
   });
 }
