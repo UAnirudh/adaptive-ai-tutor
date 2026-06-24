@@ -1,4 +1,6 @@
 import type {
+  LearnerMemory,
+  MemoryImport,
   StudentProfile,
   SubjectMastery,
   MistakePattern,
@@ -10,10 +12,12 @@ interface StudentContext {
   mastery: SubjectMastery[];
   mistakes: MistakePattern[];
   recentSessions: TutorSession[];
+  learnerMemory: LearnerMemory | null;
+  memoryImports: MemoryImport[];
 }
 
 export function buildTutorSystemPrompt(ctx: StudentContext): string {
-  const { profile, mastery, mistakes, recentSessions } = ctx;
+  const { profile, mastery, mistakes, recentSessions, learnerMemory, memoryImports } = ctx;
 
   const styleMap: Record<string, string> = {
     concise: "Be concise and direct. Skip unnecessary filler.",
@@ -57,6 +61,41 @@ export function buildTutorSystemPrompt(ctx: StudentContext): string {
   sections.push(`- Style: ${styleMap[profile.explanationStyle] || styleMap.balanced}`);
   sections.push(`- Length: ${lengthMap[profile.explanationLength] || lengthMap.medium}`);
   sections.push(`- Difficulty: ${difficultyMap[profile.difficultyLevel] || difficultyMap.medium}`);
+
+  if (learnerMemory) {
+    sections.push(`\n## Durable Learner Memory`);
+    sections.push(`- Learner Type: ${learnerMemory.learnerType || "Still learning"}`);
+    sections.push(`- Confidence: ${Math.round(learnerMemory.confidence * 100)}%`);
+    if (learnerMemory.summary) {
+      sections.push(`- Memory Summary: ${learnerMemory.summary}`);
+    }
+    if (learnerMemory.strengths.length > 0) {
+      sections.push(`- Strengths: ${learnerMemory.strengths.join("; ")}`);
+    }
+    if (learnerMemory.frictionPoints.length > 0) {
+      sections.push(`- Friction Points: ${learnerMemory.frictionPoints.join("; ")}`);
+    }
+    if (learnerMemory.preferredPatterns.length > 0) {
+      sections.push(`- Preferred Explanation Patterns: ${learnerMemory.preferredPatterns.join("; ")}`);
+    }
+    if (learnerMemory.recommendedStrategies.length > 0) {
+      sections.push(`- Recommended Tutor Strategies: ${learnerMemory.recommendedStrategies.join("; ")}`);
+    }
+    sections.push(
+      `  -> Treat this as durable memory. Use it to choose examples, pacing, checks for understanding, and how much scaffolding to provide.`
+    );
+  }
+
+  if (memoryImports.length > 0) {
+    sections.push(`\n## Imported AI Memory Sources`);
+    for (const memory of memoryImports.slice(0, 6)) {
+      sections.push(
+        `- ${memory.provider}${memory.sourceLabel ? ` (${memory.sourceLabel})` : ""}: ${
+          memory.extractedSummary || memory.rawText.slice(0, 240)
+        }`
+      );
+    }
+  }
 
   if (mastery.length > 0) {
     sections.push(`\n## Subject Mastery`);
@@ -113,6 +152,7 @@ export function buildTutorSystemPrompt(ctx: StudentContext): string {
   sections.push(`- Give concrete examples, especially using the student's interests when relevant.`);
   sections.push(`- If the student seems confused, slow down and try a different approach.`);
   sections.push(`- If the student is doing well, gradually increase complexity.`);
+  sections.push(`- Update your behavior as new evidence appears. The product promise is memory: remember patterns, avoid repeating failed approaches, and make continuity obvious.`);
   sections.push(`- After explaining a concept, offer a quick practice question.`);
   sections.push(`- Never be condescending. Be encouraging but honest about mistakes.`);
   sections.push(`- Use LaTeX notation (wrapped in $ or $$) for mathematical expressions.`);

@@ -69,6 +69,10 @@ export default function ChatPage() {
         router.push("/login");
         return;
       }
+      if (res.status === 403) {
+        router.push("/");
+        return;
+      }
 
       const data = await res.json();
 
@@ -129,14 +133,21 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b px-4 py-3 flex items-center justify-between bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="border-b border-white/10 px-4 py-3 flex items-center justify-between bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="flex items-center gap-3">
-          <Brain className="h-6 w-6 text-primary" />
-          <h1 className="font-semibold text-lg">AI Tutor</h1>
+          <div className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground">
+            <Brain className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="font-semibold text-lg leading-none">AI Tutor</h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Memory updates after each exchange
+            </p>
+          </div>
           {sessionId && (
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
               Session active
             </span>
           )}
@@ -173,16 +184,18 @@ export default function ChatPage() {
       <ScrollArea className="flex-1 px-4" ref={scrollRef}>
         <div className="mx-auto max-w-3xl py-6 space-y-6">
           {messages.length === 0 && (
-            <div className="text-center py-20 space-y-4">
-              <Brain className="h-16 w-16 mx-auto text-muted-foreground/30" />
-              <h2 className="text-xl font-medium text-muted-foreground">
+            <div className="mx-auto max-w-2xl py-20 text-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-lg border border-white/10 bg-card">
+                <Brain className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="mt-6 text-2xl font-semibold">
                 What would you like to learn today?
               </h2>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
                 Ask any academic question. Your tutor adapts explanations to your
-                learning style, interests, and current mastery level.
+                imported memory, learning style, interests, mistakes, and current mastery.
               </p>
-              <div className="flex flex-wrap gap-2 justify-center pt-4">
+              <div className="flex flex-wrap gap-2 justify-center pt-6">
                 {[
                   "Explain derivatives intuitively",
                   "Help me understand photosynthesis",
@@ -219,10 +232,10 @@ export default function ChatPage() {
                 </Avatar>
               )}
               <div
-                className={`rounded-2xl px-4 py-3 max-w-[85%] ${
+                className={`rounded-xl px-4 py-3 max-w-[85%] border ${
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    ? "border-primary/20 bg-primary text-primary-foreground"
+                    : "border-white/10 bg-card"
                 }`}
               >
                 <div className="text-sm whitespace-pre-wrap leading-relaxed">
@@ -244,7 +257,7 @@ export default function ChatPage() {
                   AI
                 </AvatarFallback>
               </Avatar>
-              <div className="rounded-2xl px-4 py-3 bg-muted">
+              <div className="rounded-xl border border-white/10 bg-card px-4 py-3">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             </div>
@@ -253,7 +266,7 @@ export default function ChatPage() {
       </ScrollArea>
 
       {/* Input */}
-      <div className="border-t bg-background p-4">
+      <div className="border-t border-white/10 bg-card/70 p-4 backdrop-blur">
         <div className="mx-auto max-w-3xl flex gap-2">
           <Textarea
             ref={textareaRef}

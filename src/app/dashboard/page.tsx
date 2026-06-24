@@ -58,12 +58,26 @@ interface DashboardData {
     struggled: string[];
     reviewNext: string[];
   }>;
+  learnerMemory: {
+    learnerType: string | null;
+    confidence: number;
+    summary: string | null;
+    strengths: string[];
+    frictionPoints: string[];
+    preferredPatterns: string[];
+    recommendedStrategies: string[];
+    evidenceCount: number;
+    sourceCount: number;
+    lastAnalyzedAt: string;
+  } | null;
   recommended: string[];
   stats: {
     totalSessions: number;
     avgMastery: number;
     topicsStudied: number;
     activeMistakes: number;
+    memorySources: number;
+    memoryEvidence: number;
   };
 }
 
@@ -79,6 +93,10 @@ export default function DashboardPage() {
         const res = await fetch("/api/dashboard");
         if (res.status === 401) {
           router.push("/login");
+          return;
+        }
+        if (res.status === 403) {
+          router.push("/");
           return;
         }
         const json = await res.json();
@@ -120,12 +138,20 @@ export default function DashboardPage() {
     );
   }
 
-  const { profile, mastery, mistakes, recentSessions, recommended, stats } = data;
+  const {
+    profile,
+    mastery,
+    mistakes,
+    recentSessions,
+    learnerMemory,
+    recommended,
+    stats,
+  } = data;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-white/10 bg-card/70 px-6 py-4 flex items-center justify-between backdrop-blur">
         <div className="flex items-center gap-3">
           <Brain className="h-6 w-6 text-primary" />
           <h1 className="font-semibold text-lg">Dashboard</h1>
@@ -159,7 +185,7 @@ export default function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              label: "Sessions Completed",
+              label: "Sessions",
               value: stats.totalSessions,
               icon: BookOpen,
             },
@@ -174,12 +200,12 @@ export default function DashboardPage() {
               icon: Target,
             },
             {
-              label: "Active Mistakes",
-              value: stats.activeMistakes,
-              icon: AlertTriangle,
+              label: "Memory Sources",
+              value: stats.memorySources,
+              icon: Brain,
             },
           ].map((stat) => (
-            <Card key={stat.label}>
+            <Card key={stat.label} className="border-white/10 bg-card/85">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -192,6 +218,86 @@ export default function DashboardPage() {
             </Card>
           ))}
         </div>
+
+        <Card className="overflow-hidden border-white/10 bg-card/85">
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle className="text-base">Learner Memory</CardTitle>
+                <CardDescription>
+                  The durable model used to adapt tutoring behavior.
+                </CardDescription>
+              </div>
+              <Badge variant="secondary" className="w-fit">
+                {stats.memoryEvidence} evidence update(s)
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {!learnerMemory ? (
+              <div className="rounded-lg border border-dashed border-white/15 p-6 text-sm text-muted-foreground">
+                Import provider logs during onboarding or complete a chat session
+                to build the first learner memory.
+              </div>
+            ) : (
+              <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Learner type</p>
+                    <h2 className="mt-1 text-2xl font-semibold">
+                      {learnerMemory.learnerType || "Still learning"}
+                    </h2>
+                  </div>
+                  {learnerMemory.summary && (
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {learnerMemory.summary}
+                    </p>
+                  )}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg bg-background/45 p-3">
+                      <p className="text-xs text-muted-foreground">Confidence</p>
+                      <p className="mt-1 text-xl font-semibold">
+                        {Math.round(learnerMemory.confidence * 100)}%
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-background/45 p-3">
+                      <p className="text-xs text-muted-foreground">Imported sources</p>
+                      <p className="mt-1 text-xl font-semibold">
+                        {learnerMemory.sourceCount}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {[
+                    ["Strengths", learnerMemory.strengths],
+                    ["Friction points", learnerMemory.frictionPoints],
+                    ["Preferred patterns", learnerMemory.preferredPatterns],
+                    ["Tutor strategies", learnerMemory.recommendedStrategies],
+                  ].map(([title, items]) => (
+                    <div key={title as string} className="rounded-lg bg-background/45 p-4">
+                      <p className="text-sm font-medium">{title as string}</p>
+                      {(items as string[]).length === 0 ? (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          More evidence needed.
+                        </p>
+                      ) : (
+                        <ul className="mt-3 space-y-2">
+                          {(items as string[]).slice(0, 4).map((item) => (
+                            <li key={item} className="text-sm leading-5 text-muted-foreground">
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Profile Summary */}

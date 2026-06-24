@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAuthUserId, ensureDbUser } from "@/lib/auth";
+import { ensureDbUser, getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getStudentContext } from "@/lib/tutor/student-model";
+import { getStudentContext, upsertLearnerMemory } from "@/lib/tutor/student-model";
 import { buildTutorSystemPrompt } from "@/lib/tutor/prompt-builder";
-import { generateTutorResponse } from "@/lib/tutor/gemini";
+import { analyzeLearnerMemory, generateTutorResponse } from "@/lib/tutor/gemini";
 import { z } from "zod";
 
 const chatSchema = z.object({
@@ -12,13 +12,14 @@ const chatSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const userId = await getAuthUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await getAdminSession();
+  if (!admin) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
   try {
-    await ensureDbUser(userId);
+    const userId = admin.userId;
+    await ensureDbUser(userId, admin.email);
 
     const body = await request.json();
     const parsed = chatSchema.safeParse(body);
@@ -78,6 +79,31 @@ export async function POST(request: Request) {
         content: response,
       },
     });
+
+    try {
+      const memoryAnalysis = await analyzeLearnerMemory({
+        existingSummary: studentContext.learnerMemory?.summary,
+        profile: studentContext.profile,
+        importedMemories: studentContext.memoryImports.map((memory) => ({
+          provider: memory.provider,
+          sourceLabel: memory.sourceLabel,
+          text: memory.extractedSummary || memory.rawText,
+        })),
+        recentTranscript: [
+          ...history.slice(-8),
+          { role: "user", content: message },
+          { role: "assistant", content: response },
+        ],
+      });
+
+      await upsertLearnerMemory(
+        studentContext.profile.id,
+        memoryAnalysis,
+        studentContext.memoryImports.length
+      );
+    } catch (memoryError) {
+      console.error("Learner memory update failed:", memoryError);
+    }
 
     return NextResponse.json({
       response,

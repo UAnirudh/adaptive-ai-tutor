@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAuthUserId, ensureDbUser } from "@/lib/auth";
+import { ensureDbUser, getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { analyzeLearnerMemory } from "@/lib/tutor/gemini";
+import { saveMemoryImport, upsertLearnerMemory } from "@/lib/tutor/student-model";
 import { z } from "zod";
 
 const onboardingSchema = z.object({
@@ -12,16 +14,27 @@ const onboardingSchema = z.object({
   explanationLength: z.enum(["short", "medium", "long"]),
   difficultyLevel: z.enum(["easy", "medium", "hard", "adaptive"]),
   interests: z.array(z.string()),
+  memoryImports: z
+    .array(
+      z.object({
+        provider: z.string().min(1).max(80),
+        sourceLabel: z.string().max(120).optional(),
+        rawText: z.string().min(20).max(50000),
+      })
+    )
+    .max(12)
+    .optional(),
 });
 
 export async function POST(request: Request) {
-  const userId = await getAuthUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await getAdminSession();
+  if (!admin) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
   try {
-    await ensureDbUser(userId);
+    const userId = admin.userId;
+    await ensureDbUser(userId, admin.email);
 
     const body = await request.json();
     const parsed = onboardingSchema.safeParse(body);
@@ -33,20 +46,58 @@ export async function POST(request: Request) {
       );
     }
 
+    const { memoryImports = [], ...profileInput } = parsed.data;
+
     const profile = await prisma.studentProfile.upsert({
       where: { userId },
       update: {
-        ...parsed.data,
+        ...profileInput,
         onboardingCompleted: true,
       },
       create: {
         userId,
-        ...parsed.data,
+        ...profileInput,
         onboardingCompleted: true,
       },
     });
 
-    return NextResponse.json({ profile });
+    if (memoryImports.length > 0) {
+      const existingMemory = await prisma.learnerMemory.findUnique({
+        where: { studentProfileId: profile.id },
+      });
+
+      const analysis = await analyzeLearnerMemory({
+        existingSummary: existingMemory?.summary,
+        profile,
+        importedMemories: memoryImports.map((memory) => ({
+          provider: memory.provider,
+          sourceLabel: memory.sourceLabel,
+          text: memory.rawText,
+        })),
+      });
+
+      for (const memory of memoryImports) {
+        await saveMemoryImport(profile.id, {
+          provider: memory.provider,
+          sourceLabel: memory.sourceLabel,
+          rawText: memory.rawText,
+          extractedSummary: analysis.summary,
+          learnerSignals: analysis.learnerSignals,
+        });
+      }
+
+      const sourceCount = await prisma.memoryImport.count({
+        where: { studentProfileId: profile.id },
+      });
+
+      await upsertLearnerMemory(profile.id, analysis, sourceCount);
+    }
+
+    const learnerMemory = await prisma.learnerMemory.findUnique({
+      where: { studentProfileId: profile.id },
+    });
+
+    return NextResponse.json({ profile, learnerMemory });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error occurred";
@@ -68,13 +119,13 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const userId = await getAuthUserId();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
     const profile = await prisma.studentProfile.findUnique({
-      where: { userId },
+      where: { userId: admin.userId },
     });
 
     return NextResponse.json({ profile });

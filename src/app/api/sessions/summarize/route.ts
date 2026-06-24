@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthUserId } from "@/lib/auth";
+import { getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { generateSessionSummary, extractMistakes } from "@/lib/tutor/gemini";
 import {
@@ -14,12 +14,13 @@ const summarizeSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const userId = await getAuthUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await getAdminSession();
+  if (!admin) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
   try {
+    const userId = admin.userId;
     const body = await request.json();
     const parsed = summarizeSchema.safeParse(body);
 

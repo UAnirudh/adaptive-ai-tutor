@@ -10,7 +10,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Brain, ChevronRight, ChevronLeft, X } from "lucide-react";
+import {
+  Brain,
+  ChevronRight,
+  ChevronLeft,
+  Database,
+  PlusCircle,
+  Sparkles,
+  X,
+} from "lucide-react";
 
 const SUBJECTS = [
   "Mathematics", "Physics", "Chemistry", "Biology", "Computer Science",
@@ -29,7 +37,24 @@ const GRADE_LEVELS = [
   "Self-Learner",
 ];
 
-const TOTAL_STEPS = 4;
+const MEMORY_PROVIDERS = [
+  "ChatGPT",
+  "Claude",
+  "Gemini",
+  "Perplexity",
+  "Copilot",
+  "NotebookLM",
+  "Other",
+];
+
+const TOTAL_STEPS = 5;
+
+type MemoryImportDraft = {
+  id: string;
+  provider: string;
+  sourceLabel: string;
+  rawText: string;
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -47,6 +72,9 @@ export default function OnboardingPage() {
   const [difficultyLevel, setDifficultyLevel] = useState("adaptive");
   const [interests, setInterests] = useState<string[]>([]);
   const [interestInput, setInterestInput] = useState("");
+  const [memoryImports, setMemoryImports] = useState<MemoryImportDraft[]>([
+    { id: crypto.randomUUID(), provider: "ChatGPT", sourceLabel: "", rawText: "" },
+  ]);
 
   function toggleSubject(subject: string) {
     setSubjects((prev) =>
@@ -74,6 +102,31 @@ export default function OnboardingPage() {
     setInterests((prev) => prev.filter((i) => i !== interest));
   }
 
+  function updateMemoryImport(
+    id: string,
+    key: keyof Omit<MemoryImportDraft, "id">,
+    value: string
+  ) {
+    setMemoryImports((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
+    );
+  }
+
+  function addMemoryImport() {
+    setMemoryImports((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), provider: "Claude", sourceLabel: "", rawText: "" },
+    ]);
+  }
+
+  function removeMemoryImport(id: string) {
+    setMemoryImports((prev) =>
+      prev.length === 1
+        ? [{ id: crypto.randomUUID(), provider: "ChatGPT", sourceLabel: "", rawText: "" }]
+        : prev.filter((item) => item.id !== id)
+    );
+  }
+
   async function handleSubmit() {
     setError("");
     setLoading(true);
@@ -91,6 +144,13 @@ export default function OnboardingPage() {
           explanationLength,
           difficultyLevel,
           interests,
+          memoryImports: memoryImports
+            .map((memory) => ({
+              provider: memory.provider.trim(),
+              sourceLabel: memory.sourceLabel.trim() || undefined,
+              rawText: memory.rawText.trim(),
+            }))
+            .filter((memory) => memory.rawText.length >= 20),
         }),
       });
 
@@ -117,15 +177,15 @@ export default function OnboardingPage() {
   };
 
   return (
-    <main className="flex-1 flex items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-2xl">
+    <main className="flex-1 px-4 py-10">
+      <Card className="mx-auto w-full max-w-3xl border-white/10 bg-card/85 shadow-2xl shadow-black/20">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
             <Brain className="h-10 w-10 text-primary" />
           </div>
           <CardTitle className="text-2xl">Let&apos;s personalize your tutor</CardTitle>
           <CardDescription>
-            Step {step} of {TOTAL_STEPS} — This helps your tutor adapt to exactly how you learn best.
+            Step {step} of {TOTAL_STEPS} - this builds the memory layer that shapes every session.
           </CardDescription>
           <Progress value={(step / TOTAL_STEPS) * 100} className="mt-4" />
         </CardHeader>
@@ -296,6 +356,97 @@ export default function OnboardingPage() {
 
           {step === 4 && (
             <div className="space-y-6">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="flex gap-3">
+                  <Database className="mt-0.5 h-5 w-5 text-primary" />
+                  <div>
+                    <h3 className="font-medium">Import memory from other AI tools</h3>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      Paste exported chats, saved memory text, or representative
+                      conversations from any provider. The tutor will infer how you
+                      learn and keep refining that model after every session.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {memoryImports.map((memory, index) => (
+                  <div
+                    key={memory.id}
+                    className="rounded-lg border border-white/10 bg-background/45 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <Label className="font-medium">Memory source {index + 1}</Label>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeMemoryImport(memory.id)}
+                        aria-label="Remove memory source"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-[0.7fr_1fr]">
+                      <div className="space-y-2">
+                        <Label htmlFor={`provider-${memory.id}`}>Provider</Label>
+                        <select
+                          id={`provider-${memory.id}`}
+                          value={memory.provider}
+                          onChange={(e) =>
+                            updateMemoryImport(memory.id, "provider", e.target.value)
+                          }
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          {MEMORY_PROVIDERS.map((provider) => (
+                            <option key={provider} value={provider}>
+                              {provider}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`label-${memory.id}`}>Label</Label>
+                        <Input
+                          id={`label-${memory.id}`}
+                          value={memory.sourceLabel}
+                          onChange={(e) =>
+                            updateMemoryImport(memory.id, "sourceLabel", e.target.value)
+                          }
+                          placeholder="Calculus help, writing feedback, saved memory..."
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      <Label htmlFor={`raw-${memory.id}`}>Chat log or memory text</Label>
+                      <Textarea
+                        id={`raw-${memory.id}`}
+                        value={memory.rawText}
+                        onChange={(e) =>
+                          updateMemoryImport(memory.id, "rawText", e.target.value)
+                        }
+                        placeholder="Paste the exported memory or conversation here..."
+                        rows={7}
+                        className="resize-y"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button type="button" variant="outline" onClick={addMemoryImport}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add another provider
+              </Button>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-6">
               <div className="space-y-3">
                 <Label className="text-base font-medium">
                   What difficulty level do you prefer?
@@ -329,6 +480,11 @@ export default function OnboardingPage() {
                   <p><strong>Subjects:</strong> {subjects.join(", ")}</p>
                   {interests.length > 0 && <p><strong>Interests:</strong> {interests.join(", ")}</p>}
                   <p><strong>Style:</strong> {explanationStyle} / {explanationLength} / {difficultyLevel}</p>
+                  <p>
+                    <strong>Memory imports:</strong>{" "}
+                    {memoryImports.filter((memory) => memory.rawText.trim().length >= 20).length}{" "}
+                    source(s)
+                  </p>
                 </div>
               </div>
             </div>
@@ -351,7 +507,7 @@ export default function OnboardingPage() {
               </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={loading || !canProceed()}>
-                {loading ? "Saving..." : "Start Learning"}
+                {loading ? "Building memory..." : "Start Learning"}
               </Button>
             )}
           </div>

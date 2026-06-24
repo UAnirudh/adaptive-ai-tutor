@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { getAuthUserId } from "@/lib/auth";
+import { getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
-  const userId = await getAuthUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await getAdminSession();
+  if (!admin) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
   try {
-    const [profile, mastery, mistakes, recentSessions] = await Promise.all([
+    const userId = admin.userId;
+    const [profile, mastery, mistakes, recentSessions, learnerMemory, memoryImportCount] =
+      await Promise.all([
       prisma.studentProfile.findUnique({
         where: { userId },
       }),
@@ -31,6 +33,16 @@ export async function GET() {
         where: { userId, summarized: true },
         orderBy: { startedAt: "desc" },
         take: 10,
+      }),
+      prisma.learnerMemory.findFirst({
+        where: {
+          studentProfile: { userId },
+        },
+      }),
+      prisma.memoryImport.count({
+        where: {
+          studentProfile: { userId },
+        },
       }),
     ]);
 
@@ -60,12 +72,15 @@ export async function GET() {
       mastery,
       mistakes,
       recentSessions,
+      learnerMemory,
       recommended,
       stats: {
         totalSessions,
         avgMastery,
         topicsStudied,
         activeMistakes,
+        memorySources: memoryImportCount,
+        memoryEvidence: learnerMemory?.evidenceCount ?? 0,
       },
     });
   } catch (error) {

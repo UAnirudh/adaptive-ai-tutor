@@ -1,11 +1,53 @@
 import { GoogleGenAI, type Content } from "@google/genai";
 
-const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+let genai: GoogleGenAI | null = null;
+
+function getGenai() {
+  if (!genai) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY environment variable is required.");
+    }
+    genai = new GoogleGenAI({ apiKey });
+  }
+
+  return genai;
+}
+
+function cleanJson(text: string) {
+  return text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+}
 
 interface TutorMessage {
   role: "user" | "assistant";
   content: string;
 }
+
+export interface LearnerMemoryAnalysis {
+  learnerType: string;
+  confidence: number;
+  summary: string;
+  strengths: string[];
+  frictionPoints: string[];
+  preferredPatterns: string[];
+  recommendedStrategies: string[];
+  learnerSignals: Record<string, unknown>;
+}
+
+const fallbackLearnerMemory: LearnerMemoryAnalysis = {
+  learnerType: "adaptive mixed learner",
+  confidence: 0.35,
+  summary:
+    "There is not enough evidence yet for a precise learner model. Keep collecting sessions and imported context.",
+  strengths: [],
+  frictionPoints: [],
+  preferredPatterns: [],
+  recommendedStrategies: [
+    "Ask short diagnostic questions before long explanations.",
+    "Reflect back uncertainty and adjust difficulty after each answer.",
+  ],
+  learnerSignals: {},
+};
 
 export async function generateTutorResponse(
   systemPrompt: string,
@@ -17,7 +59,7 @@ export async function generateTutorResponse(
     parts: [{ text: m.content }],
   }));
 
-  const response = await genai.models.generateContent({
+  const response = await getGenai().models.generateContent({
     model: "gemini-2.5-flash",
     contents: [
       ...history,
@@ -46,7 +88,7 @@ export async function generateSessionSummary(
     .map((m) => `${m.role === "user" ? "Student" : "Tutor"}: ${m.content}`)
     .join("\n\n");
 
-  const response = await genai.models.generateContent({
+  const response = await getGenai().models.generateContent({
     model: "gemini-2.5-flash",
     contents: [
       {
@@ -75,7 +117,7 @@ Return ONLY valid JSON, no markdown fences.`,
   });
 
   const text = response.text ?? "{}";
-  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  const cleaned = cleanJson(text);
 
   try {
     return JSON.parse(cleaned);
@@ -104,7 +146,7 @@ export async function extractMistakes(
     .map((m) => `${m.role === "user" ? "Student" : "Tutor"}: ${m.content}`)
     .join("\n\n");
 
-  const response = await genai.models.generateContent({
+  const response = await getGenai().models.generateContent({
     model: "gemini-2.5-flash",
     contents: [
       {
@@ -136,11 +178,134 @@ Return ONLY valid JSON, no markdown fences.`,
   });
 
   const text = response.text ?? "[]";
-  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  const cleaned = cleanJson(text);
 
   try {
     return JSON.parse(cleaned);
   } catch {
     return [];
+  }
+}
+
+export async function analyzeLearnerMemory(input: {
+  existingSummary?: string | null;
+  profile?: {
+    gradeLevel?: string | null;
+    subjects?: string[];
+    shortTermGoals?: string | null;
+    longTermGoals?: string | null;
+    explanationStyle?: string;
+    explanationLength?: string;
+    difficultyLevel?: string;
+    interests?: string[];
+  };
+  importedMemories?: Array<{
+    provider: string;
+    sourceLabel?: string | null;
+    text: string;
+  }>;
+  recentTranscript?: TutorMessage[];
+}): Promise<LearnerMemoryAnalysis> {
+  const imported = (input.importedMemories ?? [])
+    .slice(0, 8)
+    .map((memory) => {
+      const compactText = memory.text.replace(/\s+/g, " ").slice(0, 5000);
+      return `Provider: ${memory.provider}\nLabel: ${memory.sourceLabel || "import"}\nText: ${compactText}`;
+    })
+    .join("\n\n---\n\n");
+
+  const transcript = (input.recentTranscript ?? [])
+    .slice(-12)
+    .map((m) => `${m.role === "user" ? "Student" : "Tutor"}: ${m.content}`)
+    .join("\n\n");
+
+  const profile = input.profile
+    ? JSON.stringify(input.profile, null, 2)
+    : "No structured profile yet.";
+
+  const response = await getGenai().models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: `Build a durable learner memory for an adaptive AI tutor.
+
+Use the structured profile, imported AI-provider chat logs/memory, existing learner summary, and latest tutor transcript. Infer how this person learns, what explanations help, what causes friction, and what the tutor should remember in future sessions.
+
+Return ONLY valid JSON with this exact shape:
+{
+  "learnerType": "short useful label",
+  "confidence": 0.0,
+  "summary": "concise durable memory paragraph",
+  "strengths": ["specific learning strengths"],
+  "frictionPoints": ["specific recurring difficulties or blockers"],
+  "preferredPatterns": ["ways explanations should be shaped"],
+  "recommendedStrategies": ["actions the tutor should take"],
+  "learnerSignals": {
+    "pace": "string",
+    "motivation": "string",
+    "bestExamples": ["string"],
+    "avoid": ["string"]
+  }
+}
+
+Rules:
+- Do not invent private facts that are not supported by evidence.
+- Prefer stable learning traits over one-off mood or wording.
+- If evidence is weak, lower confidence and say what to observe next.
+- Keep arrays to at most 8 items each.
+
+Existing learner summary:
+${input.existingSummary || "None yet."}
+
+Structured profile:
+${profile}
+
+Imported AI-provider memories:
+${imported || "No imported memory provided."}
+
+Latest tutor transcript:
+${transcript || "No latest tutor transcript provided."}`,
+          },
+        ],
+      },
+    ],
+    config: {
+      temperature: 0.2,
+      maxOutputTokens: 1600,
+    },
+  });
+
+  const text = response.text ?? "{}";
+  const cleaned = cleanJson(text);
+
+  try {
+    const parsed = JSON.parse(cleaned) as Partial<LearnerMemoryAnalysis>;
+    return {
+      learnerType: parsed.learnerType || fallbackLearnerMemory.learnerType,
+      confidence:
+        typeof parsed.confidence === "number"
+          ? Math.max(0, Math.min(1, parsed.confidence))
+          : fallbackLearnerMemory.confidence,
+      summary: parsed.summary || fallbackLearnerMemory.summary,
+      strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 8) : [],
+      frictionPoints: Array.isArray(parsed.frictionPoints)
+        ? parsed.frictionPoints.slice(0, 8)
+        : [],
+      preferredPatterns: Array.isArray(parsed.preferredPatterns)
+        ? parsed.preferredPatterns.slice(0, 8)
+        : [],
+      recommendedStrategies: Array.isArray(parsed.recommendedStrategies)
+        ? parsed.recommendedStrategies.slice(0, 8)
+        : fallbackLearnerMemory.recommendedStrategies,
+      learnerSignals:
+        parsed.learnerSignals && typeof parsed.learnerSignals === "object"
+          ? parsed.learnerSignals
+          : {},
+    };
+  } catch {
+    return fallbackLearnerMemory;
   }
 }

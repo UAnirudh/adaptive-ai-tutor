@@ -19,6 +19,19 @@ model User {
   tutorSessions  TutorSession[]
 }
 
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  interest  String?
+  source    String   @default("waitlist")
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
 model StudentProfile {
   id        String   @id @default(cuid())
   userId    String   @unique
@@ -38,6 +51,44 @@ model StudentProfile {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   subjectMastery  SubjectMastery[]
   mistakePatterns MistakePattern[]
+  memoryImports   MemoryImport[]
+  learnerMemory   LearnerMemory?
+}
+
+model MemoryImport {
+  id               String   @id @default(cuid())
+  studentProfileId String
+  provider         String
+  sourceLabel      String?
+  rawText          String
+  extractedSummary String?
+  learnerSignals   Json?
+  createdAt        DateTime @default(now())
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId, provider])
+  @@index([createdAt])
+}
+
+model LearnerMemory {
+  id                    String   @id @default(cuid())
+  studentProfileId      String   @unique
+  learnerType           String?
+  confidence            Float    @default(0)
+  summary               String?
+  strengths             String[]
+  frictionPoints        String[]
+  preferredPatterns     String[]
+  recommendedStrategies String[]
+  evidenceCount         Int      @default(0)
+  sourceCount           Int      @default(0)
+  rawSignals            Json?
+  lastAnalyzedAt        DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
 }
 
 model SubjectMastery {

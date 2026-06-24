@@ -1,11 +1,21 @@
 import { prisma } from "@/lib/db";
-import type { StudentProfile, SubjectMastery, MistakePattern, TutorSession } from "@/generated/prisma/client";
+import type {
+  LearnerMemory,
+  MemoryImport,
+  MistakePattern,
+  StudentProfile,
+  SubjectMastery,
+  TutorSession,
+} from "@/generated/prisma/client";
+import type { LearnerMemoryAnalysis } from "@/lib/tutor/gemini";
 
 export interface StudentContext {
   profile: StudentProfile;
   mastery: SubjectMastery[];
   mistakes: MistakePattern[];
   recentSessions: TutorSession[];
+  learnerMemory: LearnerMemory | null;
+  memoryImports: MemoryImport[];
 }
 
 export async function getStudentContext(userId: string): Promise<StudentContext | null> {
@@ -15,7 +25,7 @@ export async function getStudentContext(userId: string): Promise<StudentContext 
 
   if (!profile) return null;
 
-  const [mastery, mistakes, recentSessions] = await Promise.all([
+  const [mastery, mistakes, recentSessions, learnerMemory, memoryImports] = await Promise.all([
     prisma.subjectMastery.findMany({
       where: { studentProfileId: profile.id },
       orderBy: { updatedAt: "desc" },
@@ -31,9 +41,76 @@ export async function getStudentContext(userId: string): Promise<StudentContext 
       orderBy: { startedAt: "desc" },
       take: 5,
     }),
+    prisma.learnerMemory.findUnique({
+      where: { studentProfileId: profile.id },
+    }),
+    prisma.memoryImport.findMany({
+      where: { studentProfileId: profile.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
   ]);
 
-  return { profile, mastery, mistakes, recentSessions };
+  return { profile, mastery, mistakes, recentSessions, learnerMemory, memoryImports };
+}
+
+export async function saveMemoryImport(
+  profileId: string,
+  input: {
+    provider: string;
+    sourceLabel?: string | null;
+    rawText: string;
+    extractedSummary?: string | null;
+    learnerSignals?: Record<string, unknown>;
+  }
+): Promise<void> {
+  await prisma.memoryImport.create({
+    data: {
+      studentProfileId: profileId,
+      provider: input.provider,
+      sourceLabel: input.sourceLabel || null,
+      rawText: input.rawText,
+      extractedSummary: input.extractedSummary || null,
+      learnerSignals: input.learnerSignals,
+    },
+  });
+}
+
+export async function upsertLearnerMemory(
+  profileId: string,
+  analysis: LearnerMemoryAnalysis,
+  sourceCount: number
+): Promise<void> {
+  await prisma.learnerMemory.upsert({
+    where: { studentProfileId: profileId },
+    update: {
+      learnerType: analysis.learnerType,
+      confidence: analysis.confidence,
+      summary: analysis.summary,
+      strengths: analysis.strengths,
+      frictionPoints: analysis.frictionPoints,
+      preferredPatterns: analysis.preferredPatterns,
+      recommendedStrategies: analysis.recommendedStrategies,
+      evidenceCount: { increment: 1 },
+      sourceCount,
+      rawSignals: analysis.learnerSignals,
+      lastAnalyzedAt: new Date(),
+    },
+    create: {
+      studentProfileId: profileId,
+      learnerType: analysis.learnerType,
+      confidence: analysis.confidence,
+      summary: analysis.summary,
+      strengths: analysis.strengths,
+      frictionPoints: analysis.frictionPoints,
+      preferredPatterns: analysis.preferredPatterns,
+      recommendedStrategies: analysis.recommendedStrategies,
+      evidenceCount: 1,
+      sourceCount,
+      rawSignals: analysis.learnerSignals,
+      lastAnalyzedAt: new Date(),
+    },
+  });
 }
 
 export async function updateMastery(
