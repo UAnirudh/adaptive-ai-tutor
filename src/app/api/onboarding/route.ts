@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getAuthUserId, ensureDbUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -15,12 +15,14 @@ const onboardingSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getAuthUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    await ensureDbUser(userId);
+
     const body = await request.json();
     const parsed = onboardingSchema.safeParse(body);
 
@@ -32,13 +34,13 @@ export async function POST(request: Request) {
     }
 
     const profile = await prisma.studentProfile.upsert({
-      where: { userId: session.user.id },
+      where: { userId },
       update: {
         ...parsed.data,
         onboardingCompleted: true,
       },
       create: {
-        userId: session.user.id,
+        userId,
         ...parsed.data,
         onboardingCompleted: true,
       },
@@ -66,13 +68,13 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await getAuthUserId();
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const profile = await prisma.studentProfile.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
     });
 
     return NextResponse.json({ profile });

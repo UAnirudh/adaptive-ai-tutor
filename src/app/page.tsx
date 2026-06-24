@@ -1,17 +1,13 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Brain, Target, TrendingUp } from "lucide-react";
 
 export default async function Home() {
-  try {
-    const session = await auth();
-    if (session?.user) {
-      redirect("/dashboard");
-    }
-  } catch {
-    // Auth check failed (DB not ready, etc.) — show landing page
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/dashboard");
   }
 
   return (

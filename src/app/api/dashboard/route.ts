@@ -1,40 +1,39 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getAuthUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getAuthUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const [profile, mastery, mistakes, recentSessions] = await Promise.all([
       prisma.studentProfile.findUnique({
-        where: { userId: session.user.id },
+        where: { userId },
       }),
       prisma.subjectMastery.findMany({
         where: {
-          studentProfile: { userId: session.user.id },
+          studentProfile: { userId },
         },
         orderBy: { updatedAt: "desc" },
       }),
       prisma.mistakePattern.findMany({
         where: {
-          studentProfile: { userId: session.user.id },
+          studentProfile: { userId },
           resolved: false,
         },
         orderBy: { frequency: "desc" },
         take: 10,
       }),
       prisma.tutorSession.findMany({
-        where: { userId: session.user.id, summarized: true },
+        where: { userId, summarized: true },
         orderBy: { startedAt: "desc" },
         take: 10,
       }),
     ]);
 
-    // Compute recommended next topics
     const weakTopics = mastery
       .filter((m) => m.masteryScore < 50)
       .sort((a, b) => a.masteryScore - b.masteryScore)
@@ -48,7 +47,6 @@ export async function GET() {
 
     const recommended = [...new Set([...reviewFromSessions, ...weakTopics])].slice(0, 5);
 
-    // Calculate overall stats
     const totalSessions = recentSessions.length;
     const avgMastery =
       mastery.length > 0

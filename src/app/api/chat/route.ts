@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getAuthUserId, ensureDbUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getStudentContext } from "@/lib/tutor/student-model";
 import { buildTutorSystemPrompt } from "@/lib/tutor/prompt-builder";
@@ -12,12 +12,14 @@ const chatSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getAuthUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    await ensureDbUser(userId);
+
     const body = await request.json();
     const parsed = chatSchema.safeParse(body);
 
@@ -30,7 +32,7 @@ export async function POST(request: Request) {
 
     const { message, sessionId } = parsed.data;
 
-    const studentContext = await getStudentContext(session.user.id);
+    const studentContext = await getStudentContext(userId);
     if (!studentContext) {
       return NextResponse.json(
         { error: "Please complete onboarding first" },
@@ -38,23 +40,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get or create tutor session
     let tutorSession;
     if (sessionId) {
       tutorSession = await prisma.tutorSession.findUnique({
-        where: { id: sessionId, userId: session.user.id },
+        where: { id: sessionId, userId },
         include: { messages: { orderBy: { createdAt: "asc" }, take: 50 } },
       });
     }
 
     if (!tutorSession) {
       tutorSession = await prisma.tutorSession.create({
-        data: { userId: session.user.id },
+        data: { userId },
         include: { messages: true },
       });
     }
 
-    // Save user message
     await prisma.sessionMessage.create({
       data: {
         tutorSessionId: tutorSession.id,
@@ -63,7 +63,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Build context and generate response
     const systemPrompt = buildTutorSystemPrompt(studentContext);
     const history = (tutorSession.messages || []).map((m) => ({
       role: m.role as "user" | "assistant",
@@ -72,7 +71,6 @@ export async function POST(request: Request) {
 
     const response = await generateTutorResponse(systemPrompt, history, message);
 
-    // Save assistant message
     await prisma.sessionMessage.create({
       data: {
         tutorSessionId: tutorSession.id,

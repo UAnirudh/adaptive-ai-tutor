@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getAuthUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { generateSessionSummary, extractMistakes } from "@/lib/tutor/gemini";
 import {
@@ -14,8 +14,8 @@ const summarizeSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getAuthUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const tutorSession = await prisma.tutorSession.findUnique({
-      where: { id: parsed.data.sessionId, userId: session.user.id },
+      where: { id: parsed.data.sessionId, userId },
       include: {
         messages: { orderBy: { createdAt: "asc" } },
       },
@@ -51,32 +51,27 @@ export async function POST(request: Request) {
       content: m.content,
     }));
 
-    // Generate summary and extract mistakes in parallel
     const [summary, mistakes] = await Promise.all([
       generateSessionSummary(messages),
       extractMistakes(messages),
     ]);
 
-    // Get student profile
     const profile = await prisma.studentProfile.findUnique({
-      where: { userId: session.user.id },
+      where: { userId },
     });
 
     if (profile) {
-      // Record mistakes
       for (const mistake of mistakes) {
         await recordMistake(profile.id, mistake);
         await updateMastery(profile.id, mistake.subject, mistake.topic, false);
       }
 
-      // Update mastery for understood topics
       for (const topic of summary.understood) {
         const subject = summary.topicsCovered[0] || "General";
         await updateMastery(profile.id, subject, topic, true);
       }
     }
 
-    // Save summary
     await summarizeAndCloseSession(tutorSession.id, summary);
 
     return NextResponse.json({ summary });

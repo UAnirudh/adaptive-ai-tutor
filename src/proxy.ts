@@ -1,36 +1,24 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/chat(.*)",
+  "/onboarding(.*)",
+  "/api/chat(.*)",
+  "/api/onboarding(.*)",
+  "/api/dashboard(.*)",
+  "/api/sessions(.*)",
+]);
 
-  let token = null;
-  try {
-    token = await getToken({ req: request });
-  } catch {
-    // Token check failed — allow request through
-    return NextResponse.next();
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect();
   }
-
-  const protectedPaths = ["/dashboard", "/chat", "/onboarding"];
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
-
-  if (isProtected && !token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  const authPaths = ["/login", "/register"];
-  const isAuthPage = authPaths.some((p) => pathname.startsWith(p));
-  if (isAuthPage && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/chat/:path*", "/onboarding/:path*", "/login", "/register"],
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
 };

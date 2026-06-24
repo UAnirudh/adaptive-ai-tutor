@@ -19,7 +19,7 @@ import {
   LogOut,
   Loader2,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { useClerk } from "@clerk/nextjs";
 
 interface DashboardData {
   profile: {
@@ -69,6 +69,7 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { signOut } = useClerk();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -145,7 +146,7 @@ export default function DashboardPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ redirectUrl: "/" })}
           >
             <LogOut className="h-4 w-4 mr-1" />
             Sign Out
