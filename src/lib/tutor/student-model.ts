@@ -7,6 +7,7 @@ import type {
   SubjectMastery,
   TutorSession,
 } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import type { LearnerMemoryAnalysis } from "@/lib/tutor/gemini";
 
 export interface StudentContext {
@@ -71,7 +72,7 @@ export async function saveMemoryImport(
       sourceLabel: input.sourceLabel || null,
       rawText: input.rawText,
       extractedSummary: input.extractedSummary || null,
-      learnerSignals: input.learnerSignals,
+      learnerSignals: input.learnerSignals as Prisma.InputJsonValue | undefined,
     },
   });
 }
@@ -93,7 +94,7 @@ export async function upsertLearnerMemory(
       recommendedStrategies: analysis.recommendedStrategies,
       evidenceCount: { increment: 1 },
       sourceCount,
-      rawSignals: analysis.learnerSignals,
+      rawSignals: analysis.learnerSignals as Prisma.InputJsonValue | undefined,
       lastAnalyzedAt: new Date(),
     },
     create: {
@@ -107,7 +108,7 @@ export async function upsertLearnerMemory(
       recommendedStrategies: analysis.recommendedStrategies,
       evidenceCount: 1,
       sourceCount,
-      rawSignals: analysis.learnerSignals,
+      rawSignals: analysis.learnerSignals as Prisma.InputJsonValue | undefined,
       lastAnalyzedAt: new Date(),
     },
   });
