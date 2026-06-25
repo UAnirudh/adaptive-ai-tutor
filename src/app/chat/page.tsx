@@ -15,11 +15,32 @@ import {
   BookOpen,
   Loader2,
 } from "lucide-react";
+import { parseArtifacts } from "@/lib/tutor/artifact-parser";
+import { ArtifactRenderer } from "@/components/artifact-renderer";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+}
+
+function MessageContent({ content }: { content: string }) {
+  const parsed = parseArtifacts(content);
+
+  return (
+    <>
+      {parsed.segments.map((seg, i) => {
+        if (seg.kind === "text") {
+          return (
+            <div key={i} className="text-sm whitespace-pre-wrap leading-relaxed">
+              {seg.text}
+            </div>
+          );
+        }
+        return <ArtifactRenderer key={seg.artifact.id} artifact={seg.artifact} />;
+      })}
+    </>
+  );
 }
 
 export default function ChatPage() {
@@ -238,9 +259,13 @@ export default function ChatPage() {
                     : "border-white/10 bg-card"
                 }`}
               >
-                <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {msg.content}
-                </div>
+                {msg.role === "assistant" ? (
+                  <MessageContent content={msg.content} />
+                ) : (
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {msg.content}
+                  </div>
+                )}
               </div>
               {msg.role === "user" && (
                 <Avatar className="h-8 w-8 shrink-0 mt-1">

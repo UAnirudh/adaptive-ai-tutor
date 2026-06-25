@@ -15,8 +15,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  studentProfile StudentProfile?
-  tutorSessions  TutorSession[]
+  studentProfile  StudentProfile?
+  tutorSessions   TutorSession[]
+  referralProfile ReferralProfile?
 }
 
 model WaitlistEntry {
@@ -157,4 +158,20 @@ model SessionMessage {
   tutorSession TutorSession @relation(fields: [tutorSessionId], references: [id], onDelete: Cascade)
 
   @@index([tutorSessionId, createdAt])
+}
+
+model ReferralProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  referralCode String   @unique
+  referredBy   String?
+  referralCount Int     @default(0)
+  points       Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([points(sort: Desc)])
+  @@index([referralCode])
 }

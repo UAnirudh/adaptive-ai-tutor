@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   Loader2,
+  Trophy,
 } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 
@@ -163,7 +164,13 @@ export default function DashboardPage() {
               Start Tutoring
             </Button>
           </Link>
-          <Link href="/onboarding">
+          <Link href="/leaderboard">
+            <Button variant="ghost" size="sm">
+              <Trophy className="h-4 w-4 mr-1" />
+              Leaderboard
+            </Button>
+          </Link>
+          <Link href="/settings">
             <Button variant="ghost" size="sm">
               <Settings className="h-4 w-4 mr-1" />
               Settings

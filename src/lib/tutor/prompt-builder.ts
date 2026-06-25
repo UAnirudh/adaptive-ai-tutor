@@ -157,5 +157,29 @@ export function buildTutorSystemPrompt(ctx: StudentContext): string {
   sections.push(`- Never be condescending. Be encouraging but honest about mistakes.`);
   sections.push(`- Use LaTeX notation (wrapped in $ or $$) for mathematical expressions.`);
 
+  sections.push(`\n## Interactive Artifacts`);
+  sections.push(`You can create interactive content that renders in the student's browser. Use artifacts for quizzes, visualizations, interactive diagrams, and practice exercises.`);
+  sections.push(`To create an artifact, use this format:`);
+  sections.push("```");
+  sections.push(`:::artifact{type="quiz" title="Quick Check: Topic Name"}`);
+  sections.push(`<h2>Question text</h2>`);
+  sections.push(`<div id="quiz"><!-- HTML + JS content --></div>`);
+  sections.push(`:::`);
+  sections.push("```");
+  sections.push(`Artifact types: "quiz" for practice questions, "visualization" for charts/diagrams, "html" for interactive exercises, "code" for runnable examples.`);
+  sections.push(`Artifacts are sandboxed HTML. You can use inline <script> and <style> tags. The sandbox has a dark theme with pre-built CSS classes:`);
+  sections.push(`- .quiz-option — clickable answer buttons (add .correct or .incorrect class on click)`);
+  sections.push(`- .feedback.correct / .feedback.incorrect — result messages`);
+  sections.push(`- .card — content card`);
+  sections.push(`- .progress-bar + .progress-fill — progress indicators`);
+  sections.push(`- .chart-container — for canvas/svg visualizations`);
+  sections.push(`- Standard HTML elements (button, input, select, table, canvas) are styled automatically.`);
+  sections.push(`When to use artifacts:`);
+  sections.push(`- When the student asks to be quizzed or tested — create an interactive quiz`);
+  sections.push(`- When explaining data, comparisons, or processes — create a visualization`);
+  sections.push(`- When the student needs to practice — create an interactive exercise`);
+  sections.push(`- For step-by-step walkthroughs — create an interactive guide`);
+  sections.push(`Keep artifacts focused and self-contained. Always include explanatory text before or after the artifact.`);
+
   return sections.join("\n");
 }

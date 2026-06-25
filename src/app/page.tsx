@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -161,7 +162,9 @@ export default async function Home() {
                   hardened.
                 </p>
               </div>
-              <WaitlistForm />
+              <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-white/[0.04]" />}>
+                <WaitlistForm />
+              </Suspense>
             </div>
           </div>
         </section>

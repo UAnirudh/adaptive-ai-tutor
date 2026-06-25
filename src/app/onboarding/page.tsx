@@ -1,23 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Brain,
   ChevronRight,
   ChevronLeft,
-  Database,
-  PlusCircle,
   Sparkles,
   X,
+  Copy,
+  Check,
+  Upload,
+  FileText,
+  MessageSquareText,
+  GraduationCap,
+  Target,
+  SlidersHorizontal,
+  Database,
+  PlusCircle,
+  Zap,
 } from "lucide-react";
 
 const SUBJECTS = [
@@ -37,24 +38,97 @@ const GRADE_LEVELS = [
   "Self-Learner",
 ];
 
-const MEMORY_PROVIDERS = [
-  "ChatGPT",
-  "Claude",
-  "Gemini",
-  "Perplexity",
-  "Copilot",
-  "NotebookLM",
-  "Other",
+const PROVIDERS = [
+  {
+    id: "ChatGPT",
+    label: "ChatGPT",
+    color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
+    activeColor: "ring-emerald-500/40",
+    exportTip: "Settings → Data Controls → Export data. You'll get a zip with conversations.json.",
+    memoryTip: "You can also ask ChatGPT: \"Tell me everything you remember about me.\"",
+  },
+  {
+    id: "Claude",
+    label: "Claude",
+    color: "bg-orange-500/15 text-orange-400 border-orange-500/25",
+    activeColor: "ring-orange-500/40",
+    exportTip: "Open any conversation → click the share icon → copy full conversation text.",
+    memoryTip: "Ask Claude to review your past conversations and summarize your learning patterns.",
+  },
+  {
+    id: "Gemini",
+    label: "Gemini",
+    color: "bg-blue-500/15 text-blue-400 border-blue-500/25",
+    activeColor: "ring-blue-500/40",
+    exportTip: "Google Takeout → select Gemini Apps → export. Or copy conversations directly.",
+    memoryTip: "Ask Gemini to analyze your conversation patterns and learning style.",
+  },
+  {
+    id: "Perplexity",
+    label: "Perplexity",
+    color: "bg-teal-500/15 text-teal-400 border-teal-500/25",
+    activeColor: "ring-teal-500/40",
+    exportTip: "Open your search history and copy relevant research threads.",
+    memoryTip: "Copy a few representative research sessions that show how you learn.",
+  },
+  {
+    id: "Copilot",
+    label: "Copilot",
+    color: "bg-sky-500/15 text-sky-400 border-sky-500/25",
+    activeColor: "ring-sky-500/40",
+    exportTip: "Copy conversation threads from your Copilot chat history.",
+    memoryTip: "Ask Copilot to summarize your typical questions and learning approach.",
+  },
+  {
+    id: "Other",
+    label: "Other",
+    color: "bg-white/10 text-white/60 border-white/15",
+    activeColor: "ring-white/30",
+    exportTip: "Copy conversation text or exported logs from any AI tool.",
+    memoryTip: "Paste any relevant learning-related conversations.",
+  },
 ];
 
-const TOTAL_STEPS = 5;
+function buildExtractionPrompt(provider: string): string {
+  const base = `I'm setting up an AI tutor that builds a persistent memory of how I learn. I need you to analyze our conversation history and give me a detailed breakdown.
+
+Cover these areas:
+1. How I approach new topics — do I want the big picture first, examples first, or formal definitions?
+2. What kinds of explanations actually land with me vs. ones that don't stick
+3. Subjects or question types I come back to most
+4. Where I tend to get stuck or ask follow-ups
+5. Whether I prefer concise answers or deep dives
+6. Any recurring mistakes or misconceptions you've noticed
+7. What motivates me — grades, curiosity, career goals, something else?
+
+Be specific. Reference actual conversations where possible. Don't give me generic learning advice — tell me what you've observed about *me*.
+
+Format: Start with a 2-3 sentence summary of my learning profile, then give detailed bullet points for each area above.`;
+
+  if (provider === "ChatGPT") {
+    return base + "\n\nAlso include anything from your Memory feature about my learning habits, preferred subjects, and how I like to study.";
+  }
+  if (provider === "Claude") {
+    return base + "\n\nReview our full conversation history for patterns. Include any observations about my thinking style and how I process new information.";
+  }
+  return base;
+}
 
 type MemoryImportDraft = {
   id: string;
   provider: string;
   sourceLabel: string;
   rawText: string;
+  fileName?: string;
 };
+
+const STEPS = [
+  { label: "Basics", icon: GraduationCap },
+  { label: "Goals", icon: Target },
+  { label: "Preferences", icon: SlidersHorizontal },
+  { label: "Memory", icon: Database },
+  { label: "Launch", icon: Zap },
+];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -72,9 +146,11 @@ export default function OnboardingPage() {
   const [difficultyLevel, setDifficultyLevel] = useState("adaptive");
   const [interests, setInterests] = useState<string[]>([]);
   const [interestInput, setInterestInput] = useState("");
-  const [memoryImports, setMemoryImports] = useState<MemoryImportDraft[]>([
-    { id: crypto.randomUUID(), provider: "ChatGPT", sourceLabel: "", rawText: "" },
-  ]);
+  const [memoryImports, setMemoryImports] = useState<MemoryImportDraft[]>([]);
+  const [activeProvider, setActiveProvider] = useState<string | null>(null);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function toggleSubject(subject: string) {
     setSubjects((prev) =>
@@ -102,29 +178,70 @@ export default function OnboardingPage() {
     setInterests((prev) => prev.filter((i) => i !== interest));
   }
 
-  function updateMemoryImport(
-    id: string,
-    key: keyof Omit<MemoryImportDraft, "id">,
-    value: string
-  ) {
+  function addMemoryImport(provider: string) {
+    setMemoryImports((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), provider, sourceLabel: "", rawText: "" },
+    ]);
+    setActiveProvider(provider);
+  }
+
+  function updateMemoryImport(id: string, key: keyof Omit<MemoryImportDraft, "id">, value: string) {
     setMemoryImports((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
     );
   }
 
-  function addMemoryImport() {
-    setMemoryImports((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), provider: "Claude", sourceLabel: "", rawText: "" },
-    ]);
+  function removeMemoryImport(id: string) {
+    setMemoryImports((prev) => prev.filter((item) => item.id !== id));
   }
 
-  function removeMemoryImport(id: string) {
+  async function handleFileUpload(importId: string, file: File) {
+    const text = await file.text();
+    let content = text;
+
+    if (file.name.endsWith(".json")) {
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          content = parsed
+            .filter((c: { mapping?: Record<string, { message?: { content?: { parts?: string[] }; author?: { role?: string } } }> }) => c.mapping)
+            .slice(0, 5)
+            .map((conv: { title?: string; mapping?: Record<string, { message?: { content?: { parts?: string[] }; author?: { role?: string } } }> }) => {
+              const messages = Object.values(conv.mapping ?? {})
+                .filter((m) => m.message?.content?.parts?.length)
+                .map((m) => `${m.message?.author?.role}: ${m.message?.content?.parts?.join(" ")}`)
+                .join("\n");
+              return `--- ${conv.title ?? "Conversation"} ---\n${messages}`;
+            })
+            .join("\n\n");
+        } else if (parsed.title && parsed.mapping) {
+          const messages = Object.values(parsed.mapping as Record<string, { message?: { content?: { parts?: string[] }; author?: { role?: string } } }>)
+            .filter((m) => m.message?.content?.parts?.length)
+            .map((m) => `${m.message?.author?.role}: ${m.message?.content?.parts?.join(" ")}`)
+            .join("\n");
+          content = messages;
+        }
+      } catch {
+        // Use raw text if JSON parsing fails
+      }
+    }
+
+    const truncated = content.slice(0, 50000);
     setMemoryImports((prev) =>
-      prev.length === 1
-        ? [{ id: crypto.randomUUID(), provider: "ChatGPT", sourceLabel: "", rawText: "" }]
-        : prev.filter((item) => item.id !== id)
+      prev.map((item) =>
+        item.id === importId
+          ? { ...item, rawText: truncated, fileName: file.name, sourceLabel: file.name.replace(/\.[^.]+$/, "") }
+          : item
+      )
     );
+  }
+
+  async function copyPrompt(provider: string) {
+    const prompt = buildExtractionPrompt(provider);
+    await navigator.clipboard.writeText(prompt);
+    setCopiedPrompt(true);
+    setTimeout(() => setCopiedPrompt(false), 2000);
   }
 
   async function handleSubmit() {
@@ -145,18 +262,18 @@ export default function OnboardingPage() {
           difficultyLevel,
           interests,
           memoryImports: memoryImports
-            .map((memory) => ({
-              provider: memory.provider.trim(),
-              sourceLabel: memory.sourceLabel.trim() || undefined,
-              rawText: memory.rawText.trim(),
+            .map((m) => ({
+              provider: m.provider.trim(),
+              sourceLabel: m.sourceLabel.trim() || undefined,
+              rawText: m.rawText.trim(),
             }))
-            .filter((memory) => memory.rawText.length >= 20),
+            .filter((m) => m.rawText.length >= 20),
         }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Failed to save profile");
+        setError(data.error || "Something went wrong saving your profile.");
         setLoading(false);
         return;
       }
@@ -164,355 +281,592 @@ export default function OnboardingPage() {
       router.push("/chat");
       router.refresh();
     } catch {
-      setError("Something went wrong");
+      setError("Connection failed. Check your internet and try again.");
       setLoading(false);
     }
   }
 
   const canProceed = () => {
     if (step === 1) return gradeLevel !== "" && subjects.length > 0;
-    if (step === 2) return true;
-    if (step === 3) return true;
     return true;
   };
 
+  const providerImports = (providerId: string) =>
+    memoryImports.filter((m) => m.provider === providerId);
+
   return (
-    <main className="flex-1 px-4 py-10">
-      <Card className="mx-auto w-full max-w-3xl border-white/10 bg-card/85 shadow-2xl shadow-black/20">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex justify-center">
-            <Brain className="h-10 w-10 text-primary" />
+    <main className="min-h-dvh bg-[#11100d] text-white">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
+      <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_at_top,rgba(231,223,206,0.12),transparent_62%)]" />
+
+      <div className="relative mx-auto flex min-h-dvh max-w-4xl flex-col px-5 py-6 sm:px-8">
+        {/* Header */}
+        <div className="flex items-center gap-3 pb-6">
+          <div className="grid h-9 w-9 place-items-center rounded-md bg-[#e7dfce] text-[#15130f]">
+            <Brain className="h-5 w-5" />
           </div>
-          <CardTitle className="text-2xl">Let&apos;s personalize your tutor</CardTitle>
-          <CardDescription>
-            Step {step} of {TOTAL_STEPS} - this builds the memory layer that shapes every session.
-          </CardDescription>
-          <Progress value={(step / TOTAL_STEPS) * 100} className="mt-4" />
-        </CardHeader>
-        <CardContent className="space-y-6">
+          <div>
+            <p className="text-sm font-semibold">Set up your tutor</p>
+            <p className="text-xs text-white/40">Takes about 3 minutes</p>
+          </div>
+        </div>
+
+        {/* Step indicators */}
+        <div className="mb-8 flex items-center gap-1">
+          {STEPS.map((s, i) => {
+            const stepNum = i + 1;
+            const active = step === stepNum;
+            const done = step > stepNum;
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.label}
+                onClick={() => done && setStep(stepNum)}
+                disabled={!done}
+                className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                  active
+                    ? "bg-[#e7dfce]/15 text-[#e7dfce] ring-1 ring-[#e7dfce]/30"
+                    : done
+                      ? "bg-white/5 text-white/50 hover:bg-white/8 cursor-pointer"
+                      : "text-white/20"
+                } ${i < STEPS.length - 1 ? "mr-1" : ""}`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{s.label}</span>
+                {done && <Check className="h-3 w-3 text-emerald-400" />}
+              </button>
+            );
+          })}
+          <div className="ml-auto text-xs text-white/30">{step}/{STEPS.length}</div>
+        </div>
+
+        {/* Step content */}
+        <div className="flex-1">
           {error && (
-            <div className="rounded-lg bg-destructive/10 text-destructive text-sm p-3">
+            <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
               {error}
             </div>
           )}
 
+          {/* Step 1: Basics */}
           {step === 1 && (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-medium">What&apos;s your grade level?</Label>
-                <RadioGroup value={gradeLevel} onValueChange={setGradeLevel}>
-                  <div className="grid grid-cols-2 gap-2">
-                    {GRADE_LEVELS.map((level) => (
-                      <div key={level} className="flex items-center space-x-2">
-                        <RadioGroupItem value={level} id={level} />
-                        <Label htmlFor={level} className="text-sm cursor-pointer">
-                          {level}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-semibold">Where are you in your learning journey?</h2>
+                <p className="mt-2 text-sm text-white/50">
+                  Your tutor uses this to calibrate vocabulary, pacing, and the depth of every explanation.
+                </p>
               </div>
 
               <div className="space-y-3">
-                <Label className="text-base font-medium">
-                  What subjects are you studying?
-                </Label>
+                <p className="text-sm font-medium text-white/70">Grade level</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {GRADE_LEVELS.map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setGradeLevel(level)}
+                      className={`rounded-lg border px-3 py-2.5 text-left text-sm transition-all ${
+                        gradeLevel === level
+                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10 text-white"
+                          : "border-white/8 bg-white/[0.03] text-white/60 hover:border-white/15 hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-white/70">What are you studying?</p>
                 <div className="flex flex-wrap gap-2">
                   {SUBJECTS.map((subject) => (
-                    <Badge
+                    <button
                       key={subject}
-                      variant={subjects.includes(subject) ? "default" : "outline"}
-                      className="cursor-pointer text-sm py-1 px-3"
                       onClick={() => toggleSubject(subject)}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
+                        subjects.includes(subject)
+                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/15 text-[#e7dfce]"
+                          : "border-white/8 text-white/50 hover:border-white/15 hover:text-white/70"
+                      }`}
                     >
                       {subject}
-                    </Badge>
+                    </button>
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Input
+                  <input
                     value={customSubject}
                     onChange={(e) => setCustomSubject(e.target.value)}
-                    placeholder="Add another subject..."
+                    placeholder="Something else..."
+                    className="h-10 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none"
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSubject())}
                   />
-                  <Button type="button" variant="outline" onClick={addCustomSubject}>
+                  <button
+                    onClick={addCustomSubject}
+                    className="rounded-lg border border-white/10 px-4 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                  >
                     Add
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Step 2: Goals */}
           {step === 2 && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-semibold">What are you working toward?</h2>
+                <p className="mt-2 text-sm text-white/50">
+                  Goals shape which topics get priority and how your tutor frames long-term progress.
+                </p>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="shortTermGoals" className="text-base font-medium">
-                  What are your short-term goals?
-                </Label>
-                <Textarea
-                  id="shortTermGoals"
+                <p className="text-sm font-medium text-white/70">Near-term goals</p>
+                <textarea
                   value={shortTermGoals}
                   onChange={(e) => setShortTermGoals(e.target.value)}
-                  placeholder="e.g., Pass my calculus midterm, understand organic chemistry reactions..."
+                  placeholder="Pass my calc final, finish the data structures problem set, nail the AP Bio exam..."
                   rows={3}
+                  className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none resize-none"
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="longTermGoals" className="text-base font-medium">
-                  What are your long-term goals?
-                </Label>
-                <Textarea
-                  id="longTermGoals"
+                <p className="text-sm font-medium text-white/70">Bigger-picture goals</p>
+                <textarea
                   value={longTermGoals}
                   onChange={(e) => setLongTermGoals(e.target.value)}
-                  placeholder="e.g., Get into a good engineering program, master data science..."
+                  placeholder="Get into a strong CS program, become fluent in organic chem, switch careers into data science..."
                   rows={3}
+                  className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none resize-none"
                 />
               </div>
+
               <div className="space-y-3">
-                <Label className="text-base font-medium">
-                  What are your interests and hobbies?
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Your tutor will use these to create relatable examples.
+                <p className="text-sm font-medium text-white/70">
+                  Interests and hobbies
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {interests.map((interest) => (
-                    <Badge key={interest} variant="secondary" className="gap-1">
-                      {interest}
-                      <button type="button" onClick={() => removeInterest(interest)}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
+                <p className="text-xs text-white/35">
+                  Your tutor weaves these into examples and analogies so explanations actually stick.
+                </p>
+                {interests.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {interests.map((interest) => (
+                      <span
+                        key={interest}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-sm text-white/70"
+                      >
+                        {interest}
+                        <button onClick={() => removeInterest(interest)} className="text-white/30 hover:text-white/60">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2">
-                  <Input
+                  <input
                     value={interestInput}
                     onChange={(e) => setInterestInput(e.target.value)}
-                    placeholder="e.g., robotics, basketball, gaming, cooking..."
+                    placeholder="robotics, basketball, gaming, cooking, music production..."
+                    className="h-10 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none"
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addInterest())}
                   />
-                  <Button type="button" variant="outline" onClick={addInterest}>
+                  <button
+                    onClick={addInterest}
+                    className="rounded-lg border border-white/10 px-4 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                  >
                     Add
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Step 3: Preferences */}
           {step === 3 && (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-medium">
-                  How do you like explanations?
-                </Label>
-                <RadioGroup value={explanationStyle} onValueChange={setExplanationStyle}>
-                  <div className="space-y-2">
-                    {[
-                      { value: "concise", label: "Concise", desc: "Get to the point. Short and direct." },
-                      { value: "balanced", label: "Balanced", desc: "Clear explanations with the right amount of detail." },
-                      { value: "detailed", label: "Detailed", desc: "Thorough explanations with full context and reasoning." },
-                    ].map((opt) => (
-                      <div key={opt.value} className="flex items-start space-x-3 rounded-lg border p-3">
-                        <RadioGroupItem value={opt.value} id={`style-${opt.value}`} className="mt-0.5" />
-                        <div>
-                          <Label htmlFor={`style-${opt.value}`} className="font-medium cursor-pointer">
-                            {opt.label}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">{opt.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-semibold">How should your tutor talk to you?</h2>
+                <p className="mt-2 text-sm text-white/50">
+                  These defaults kick in from session one. The tutor still adapts over time as it learns your patterns.
+                </p>
               </div>
 
               <div className="space-y-3">
-                <Label className="text-base font-medium">
-                  Preferred response length
-                </Label>
-                <RadioGroup value={explanationLength} onValueChange={setExplanationLength}>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { value: "short", label: "Short" },
-                      { value: "medium", label: "Medium" },
-                      { value: "long", label: "Long" },
-                    ].map((opt) => (
-                      <div key={opt.value} className="flex items-center space-x-2 rounded-lg border p-3">
-                        <RadioGroupItem value={opt.value} id={`length-${opt.value}`} />
-                        <Label htmlFor={`length-${opt.value}`} className="cursor-pointer">
-                          {opt.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
+                <p className="text-sm font-medium text-white/70">Explanation style</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    { value: "concise", label: "Concise", desc: "Straight to the point. No filler." },
+                    { value: "balanced", label: "Balanced", desc: "Clear and thorough without overdoing it." },
+                    { value: "detailed", label: "Detailed", desc: "Full context, reasoning, and background." },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setExplanationStyle(opt.value)}
+                      className={`rounded-lg border p-4 text-left transition-all ${
+                        explanationStyle === opt.value
+                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10"
+                          : "border-white/8 bg-white/[0.03] hover:border-white/15"
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-white">{opt.label}</p>
+                      <p className="mt-1 text-xs text-white/45">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-white/70">Response length</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {["short", "medium", "long"].map((len) => (
+                    <button
+                      key={len}
+                      onClick={() => setExplanationLength(len)}
+                      className={`rounded-lg border px-4 py-3 text-sm capitalize transition-all ${
+                        explanationLength === len
+                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10 text-white"
+                          : "border-white/8 text-white/50 hover:border-white/15"
+                      }`}
+                    >
+                      {len}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-white/70">Starting difficulty</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {[
+                    { value: "easy", label: "Gentle start", desc: "Fundamentals first, lots of examples, patient pacing." },
+                    { value: "medium", label: "Some foundation", desc: "Skip the basics I already know, build from there." },
+                    { value: "hard", label: "Push me", desc: "Edge cases, deeper reasoning, faster pace." },
+                    { value: "adaptive", label: "Let the tutor decide", desc: "Start moderate and adjust based on how I'm doing." },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setDifficultyLevel(opt.value)}
+                      className={`rounded-lg border p-4 text-left transition-all ${
+                        difficultyLevel === opt.value
+                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10"
+                          : "border-white/8 bg-white/[0.03] hover:border-white/15"
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-white">{opt.label}</p>
+                      <p className="mt-1 text-xs text-white/45">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
+          {/* Step 4: Memory Import */}
           {step === 4 && (
             <div className="space-y-6">
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <div>
+                <h2 className="text-2xl font-semibold">Bring your learning history</h2>
+                <p className="mt-2 text-sm text-white/50">
+                  Your tutor gets meaningfully better when it can see how you've learned before. Import from any AI you've used — or skip this and build memory from scratch.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-[#e7dfce]/15 bg-[#e7dfce]/[0.04] p-4">
                 <div className="flex gap-3">
-                  <Database className="mt-0.5 h-5 w-5 text-primary" />
-                  <div>
-                    <h3 className="font-medium">Import memory from other AI tools</h3>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      Paste exported chats, saved memory text, or representative
-                      conversations from any provider. The tutor will infer how you
-                      learn and keep refining that model after every session.
+                  <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#e7dfce]" />
+                  <div className="text-sm leading-6">
+                    <p className="font-medium text-[#e7dfce]">How this works</p>
+                    <p className="mt-1 text-white/50">
+                      Pick a provider below. You'll get a ready-made prompt to paste into that AI — it asks it to analyze how you learn. Copy the response back here. You can also upload exported chat logs directly.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                {memoryImports.map((memory, index) => (
-                  <div
-                    key={memory.id}
-                    className="rounded-lg border border-white/10 bg-background/45 p-4"
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        <Label className="font-medium">Memory source {index + 1}</Label>
+              {/* Provider grid */}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {PROVIDERS.map((p) => {
+                  const hasImports = providerImports(p.id).length > 0;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setActiveProvider(activeProvider === p.id ? null : p.id)}
+                      className={`group relative rounded-lg border p-3 text-left transition-all ${
+                        activeProvider === p.id
+                          ? `${p.color} ring-2 ${p.activeColor}`
+                          : hasImports
+                            ? `${p.color}`
+                            : "border-white/8 bg-white/[0.03] text-white/60 hover:border-white/15"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{p.label}</span>
+                        {hasImports && (
+                          <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-500/20 text-xs text-emerald-400">
+                            {providerImports(p.id).length}
+                          </span>
+                        )}
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeMemoryImport(memory.id)}
-                        aria-label="Remove memory source"
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active provider panel */}
+              {activeProvider && (() => {
+                const provider = PROVIDERS.find((p) => p.id === activeProvider)!;
+                const imports = providerImports(activeProvider);
+
+                return (
+                  <div className="rounded-xl border border-white/10 bg-[#171511]/80 p-5 space-y-5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-medium">Import from {provider.label}</h3>
+                      <button
+                        onClick={() => setActiveProvider(null)}
+                        className="text-white/30 hover:text-white/60"
                       >
                         <X className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-[0.7fr_1fr]">
-                      <div className="space-y-2">
-                        <Label htmlFor={`provider-${memory.id}`}>Provider</Label>
-                        <select
-                          id={`provider-${memory.id}`}
-                          value={memory.provider}
-                          onChange={(e) =>
-                            updateMemoryImport(memory.id, "provider", e.target.value)
-                          }
-                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                        >
-                          {MEMORY_PROVIDERS.map((provider) => (
-                            <option key={provider} value={provider}>
-                              {provider}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`label-${memory.id}`}>Label</Label>
-                        <Input
-                          id={`label-${memory.id}`}
-                          value={memory.sourceLabel}
-                          onChange={(e) =>
-                            updateMemoryImport(memory.id, "sourceLabel", e.target.value)
-                          }
-                          placeholder="Calculus help, writing feedback, saved memory..."
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      <Label htmlFor={`raw-${memory.id}`}>Chat log or memory text</Label>
-                      <Textarea
-                        id={`raw-${memory.id}`}
-                        value={memory.rawText}
-                        onChange={(e) =>
-                          updateMemoryImport(memory.id, "rawText", e.target.value)
-                        }
-                        placeholder="Paste the exported memory or conversation here..."
-                        rows={7}
-                        className="resize-y"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
 
-              <Button type="button" variant="outline" onClick={addMemoryImport}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add another provider
-              </Button>
-            </div>
-          )}
-
-          {step === 5 && (
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-medium">
-                  What difficulty level do you prefer?
-                </Label>
-                <RadioGroup value={difficultyLevel} onValueChange={setDifficultyLevel}>
-                  <div className="space-y-2">
-                    {[
-                      { value: "easy", label: "Easy", desc: "Start from the basics. Lots of examples and gentle pacing." },
-                      { value: "medium", label: "Medium", desc: "Assume some knowledge. Build on what I already know." },
-                      { value: "hard", label: "Hard", desc: "Challenge me. Edge cases, deeper reasoning, faster pace." },
-                      { value: "adaptive", label: "Adaptive (Recommended)", desc: "Let the tutor adjust based on how I'm doing." },
-                    ].map((opt) => (
-                      <div key={opt.value} className="flex items-start space-x-3 rounded-lg border p-3">
-                        <RadioGroupItem value={opt.value} id={`diff-${opt.value}`} className="mt-0.5" />
-                        <div>
-                          <Label htmlFor={`diff-${opt.value}`} className="font-medium cursor-pointer">
-                            {opt.label}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">{opt.desc}</p>
+                    {/* Option 1: Extraction prompt */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <MessageSquareText className="h-4 w-4 text-[#e7dfce]" />
+                        <p className="text-sm font-medium text-white/80">Option 1: Ask {provider.label} to analyze your learning</p>
+                      </div>
+                      <div className="rounded-lg border border-white/8 bg-black/30 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-xs leading-5 text-white/40 line-clamp-3">
+                            {buildExtractionPrompt(provider.id).slice(0, 180)}...
+                          </p>
+                          <button
+                            onClick={() => copyPrompt(provider.id)}
+                            className="shrink-0 rounded-md border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10"
+                          >
+                            {copiedPrompt ? (
+                              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-emerald-400" /> Copied</span>
+                            ) : (
+                              <span className="flex items-center gap-1"><Copy className="h-3 w-3" /> Copy prompt</span>
+                            )}
+                          </button>
                         </div>
+                        <p className="mt-3 text-xs text-white/30">
+                          {provider.memoryTip}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Option 2: File upload */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-[#e7dfce]" />
+                        <p className="text-sm font-medium text-white/80">Option 2: Upload exported chat logs</p>
+                      </div>
+                      <p className="text-xs text-white/35">{provider.exportTip}</p>
+                    </div>
+
+                    {/* Import slots */}
+                    {imports.map((imp) => (
+                      <div key={imp.id} className="rounded-lg border border-white/8 bg-white/[0.02] p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {imp.fileName ? (
+                              <FileText className="h-4 w-4 text-white/40" />
+                            ) : (
+                              <MessageSquareText className="h-4 w-4 text-white/40" />
+                            )}
+                            <input
+                              value={imp.sourceLabel}
+                              onChange={(e) => updateMemoryImport(imp.id, "sourceLabel", e.target.value)}
+                              placeholder="Label this import (optional)"
+                              className="bg-transparent text-sm text-white placeholder:text-white/25 focus:outline-none"
+                            />
+                          </div>
+                          <button
+                            onClick={() => removeMemoryImport(imp.id)}
+                            className="text-white/25 hover:text-white/50"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {imp.fileName ? (
+                          <div className="flex items-center gap-2 rounded-md bg-white/[0.04] px-3 py-2 text-xs text-white/50">
+                            <FileText className="h-3.5 w-3.5" />
+                            {imp.fileName}
+                            <span className="ml-auto text-white/30">
+                              {Math.round(imp.rawText.length / 1000)}k chars
+                            </span>
+                          </div>
+                        ) : (
+                          <textarea
+                            value={imp.rawText}
+                            onChange={(e) => updateMemoryImport(imp.id, "rawText", e.target.value)}
+                            placeholder={`Paste ${provider.label}'s analysis of your learning style here...`}
+                            rows={6}
+                            className="w-full rounded-lg border border-white/8 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-[#e7dfce]/20 focus:outline-none resize-y"
+                          />
+                        )}
                       </div>
                     ))}
-                  </div>
-                </RadioGroup>
-              </div>
 
-              <div className="rounded-lg bg-muted p-4 space-y-2">
-                <h3 className="font-medium">Your Profile Summary</h3>
-                <div className="text-sm space-y-1 text-muted-foreground">
-                  <p><strong>Grade:</strong> {gradeLevel}</p>
-                  <p><strong>Subjects:</strong> {subjects.join(", ")}</p>
-                  {interests.length > 0 && <p><strong>Interests:</strong> {interests.join(", ")}</p>}
-                  <p><strong>Style:</strong> {explanationStyle} / {explanationLength} / {difficultyLevel}</p>
-                  <p>
-                    <strong>Memory imports:</strong>{" "}
-                    {memoryImports.filter((memory) => memory.rawText.trim().length >= 20).length}{" "}
-                    source(s)
+                    {/* Add import buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => addMemoryImport(activeProvider)}
+                        className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        Paste response
+                      </button>
+                      <button
+                        onClick={() => {
+                          const id = crypto.randomUUID();
+                          setMemoryImports((prev) => [
+                            ...prev,
+                            { id, provider: activeProvider, sourceLabel: "", rawText: "" },
+                          ]);
+                          setTimeout(() => fileInputRef.current?.click(), 50);
+                          fileInputRef.current?.setAttribute("data-import-id", id);
+                        }}
+                        className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload file
+                      </button>
+                    </div>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".json,.txt,.md,.csv"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        const importId = fileInputRef.current?.getAttribute("data-import-id");
+                        if (file && importId) {
+                          handleFileUpload(importId, file);
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+                );
+              })()}
+
+              {memoryImports.length === 0 && !activeProvider && (
+                <div className="rounded-lg border border-dashed border-white/10 p-8 text-center">
+                  <Database className="mx-auto h-8 w-8 text-white/15" />
+                  <p className="mt-3 text-sm text-white/35">
+                    Pick a provider above to start importing, or skip this step and let the tutor learn from your sessions.
                   </p>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          <div className="flex justify-between pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setStep((s) => s - 1)}
-              disabled={step === 1}
+          {/* Step 5: Review & Launch */}
+          {step === 5 && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-semibold">Everything look right?</h2>
+                <p className="mt-2 text-sm text-white/50">
+                  You can change any of this later in Settings. The tutor keeps refining its model of you after every session.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
+                  <p className="text-xs font-medium text-white/40">Level</p>
+                  <p className="text-sm font-medium">{gradeLevel || "Not set"}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
+                  <p className="text-xs font-medium text-white/40">Subjects</p>
+                  <div className="flex flex-wrap gap-1">
+                    {subjects.map((s) => (
+                      <span key={s} className="rounded-full bg-[#e7dfce]/10 px-2 py-0.5 text-xs text-[#e7dfce]">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
+                  <p className="text-xs font-medium text-white/40">Style</p>
+                  <p className="text-sm capitalize">{explanationStyle} / {explanationLength} / {difficultyLevel}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
+                  <p className="text-xs font-medium text-white/40">Memory imports</p>
+                  <p className="text-sm">
+                    {memoryImports.filter((m) => m.rawText.trim().length >= 20).length} source(s) ready to analyze
+                  </p>
+                </div>
+                {interests.length > 0 && (
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2 sm:col-span-2">
+                    <p className="text-xs font-medium text-white/40">Interests</p>
+                    <p className="text-sm text-white/70">{interests.join(", ")}</p>
+                  </div>
+                )}
+              </div>
+
+              {loading && (
+                <div className="rounded-lg border border-[#e7dfce]/15 bg-[#e7dfce]/[0.04] p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#e7dfce]/30 border-t-[#e7dfce]" />
+                    <p className="text-sm text-[#e7dfce]">
+                      Building your learner model — analyzing imports and setting up your tutor...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between border-t border-white/8 pt-5 mt-8">
+          <button
+            onClick={() => setStep((s) => s - 1)}
+            disabled={step === 1}
+            className="flex items-center gap-1 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:border-white/20 hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+          >
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
+
+          {step < STEPS.length ? (
+            <button
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!canProceed()}
+              className="flex items-center gap-1 rounded-lg bg-[#e7dfce] px-5 py-2.5 text-sm font-medium text-[#15130f] transition hover:bg-[#fff4dc] disabled:opacity-40 disabled:pointer-events-none"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" /> Back
-            </Button>
-            {step < TOTAL_STEPS ? (
-              <Button
-                onClick={() => setStep((s) => s + 1)}
-                disabled={!canProceed()}
-              >
-                Next <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={loading || !canProceed()}>
-                {loading ? "Building memory..." : "Start Learning"}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              Continue <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !canProceed()}
+              className="flex items-center gap-2 rounded-lg bg-[#e7dfce] px-6 py-2.5 text-sm font-medium text-[#15130f] transition hover:bg-[#fff4dc] disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {loading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#15130f]/30 border-t-[#15130f]" />
+                  Building memory...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4" />
+                  Launch my tutor
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
