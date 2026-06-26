@@ -4,11 +4,13 @@ import { prisma } from "@/lib/db";
 import { getStudentContext, upsertLearnerMemory } from "@/lib/tutor/student-model";
 import { buildTutorSystemPrompt } from "@/lib/tutor/prompt-builder";
 import { analyzeLearnerMemory, generateTutorResponse } from "@/lib/tutor/gemini";
+import { getActiveModalities, DEFAULT_WEIGHTS, type ModalityMode, type ModalityWeights } from "@/lib/tutor/modality";
 import { z } from "zod";
 
 const chatSchema = z.object({
   message: z.string().min(1).max(10000),
   sessionId: z.string().optional(),
+  modalityMode: z.enum(["auto", "auditory", "visual", "reading", "blended"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -31,7 +33,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { message, sessionId } = parsed.data;
+    const { message, sessionId, modalityMode = "auto" } = parsed.data;
 
     const studentContext = await getStudentContext(userId);
     if (!studentContext) {
@@ -40,6 +42,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const storedWeights = studentContext.learnerMemory?.modalityScores as ModalityWeights | null;
+    const weights: ModalityWeights = storedWeights ?? DEFAULT_WEIGHTS;
+    const { useVoice, useArtifacts } = getActiveModalities(modalityMode as ModalityMode, weights);
 
     let tutorSession;
     if (sessionId) {
@@ -64,7 +70,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const systemPrompt = buildTutorSystemPrompt(studentContext);
+    const systemPrompt = buildTutorSystemPrompt(studentContext, { useVoice, useArtifacts });
     const history = (tutorSession.messages || []).map((m) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
@@ -108,6 +114,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       response,
       sessionId: tutorSession.id,
+      modalityWeights: weights,
+      activeModalities: { useVoice, useArtifacts },
     });
   } catch (error) {
     const message =

@@ -48,6 +48,8 @@ model StudentProfile {
   difficultyLevel     String   @default("medium")
   interests           String[]
   onboardingCompleted Boolean  @default(false)
+  learningModality    String   @default("auto")
+  modalityWeights     Json?
 
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   subjectMastery  SubjectMastery[]
@@ -85,6 +87,8 @@ model LearnerMemory {
   evidenceCount         Int      @default(0)
   sourceCount           Int      @default(0)
   rawSignals            Json?
+  detectedModality      String?
+  modalityScores        Json?
   lastAnalyzedAt        DateTime @default(now())
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

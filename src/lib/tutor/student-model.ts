@@ -8,7 +8,7 @@ import type {
   TutorSession,
 } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";
-import type { LearnerMemoryAnalysis } from "@/lib/tutor/gemini";
+import type { LearnerMemoryAnalysis, ModalityScores } from "@/lib/tutor/gemini";
 
 export interface StudentContext {
   profile: StudentProfile;
@@ -77,11 +77,49 @@ export async function saveMemoryImport(
   });
 }
 
+function resolveModality(
+  newScores: ModalityScores | undefined,
+  existing: unknown
+): { detectedModality: string | null; modalityScores: Prisma.InputJsonValue | undefined } {
+  if (!newScores) return { detectedModality: null, modalityScores: undefined };
+
+  const prev = existing as { auditory?: number; visual?: number; reading?: number } | null;
+
+  const blended = {
+    auditory: prev ? prev.auditory! * 0.6 + newScores.auditory * 0.4 : newScores.auditory,
+    visual: prev ? prev.visual! * 0.6 + newScores.visual * 0.4 : newScores.visual,
+    reading: prev ? prev.reading! * 0.6 + newScores.reading * 0.4 : newScores.reading,
+    reasoning: newScores.reasoning,
+  };
+
+  const dominant =
+    blended.auditory >= blended.visual && blended.auditory >= blended.reading
+      ? "auditory"
+      : blended.visual >= blended.reading
+        ? "visual"
+        : "reading";
+
+  return {
+    detectedModality: dominant,
+    modalityScores: blended as unknown as Prisma.InputJsonValue,
+  };
+}
+
 export async function upsertLearnerMemory(
   profileId: string,
   analysis: LearnerMemoryAnalysis,
   sourceCount: number
 ): Promise<void> {
+  const existingMemory = await prisma.learnerMemory.findUnique({
+    where: { studentProfileId: profileId },
+    select: { modalityScores: true },
+  });
+
+  const { detectedModality, modalityScores } = resolveModality(
+    analysis.modalityScores,
+    existingMemory?.modalityScores
+  );
+
   await prisma.learnerMemory.upsert({
     where: { studentProfileId: profileId },
     update: {
@@ -95,6 +133,8 @@ export async function upsertLearnerMemory(
       evidenceCount: { increment: 1 },
       sourceCount,
       rawSignals: analysis.learnerSignals as Prisma.InputJsonValue | undefined,
+      detectedModality,
+      modalityScores,
       lastAnalyzedAt: new Date(),
     },
     create: {
@@ -109,6 +149,8 @@ export async function upsertLearnerMemory(
       evidenceCount: 1,
       sourceCount,
       rawSignals: analysis.learnerSignals as Prisma.InputJsonValue | undefined,
+      detectedModality,
+      modalityScores,
       lastAnalyzedAt: new Date(),
     },
   });

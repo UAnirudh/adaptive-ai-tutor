@@ -16,8 +16,15 @@ interface StudentContext {
   memoryImports: MemoryImport[];
 }
 
-export function buildTutorSystemPrompt(ctx: StudentContext): string {
+interface PromptOptions {
+  useVoice?: boolean;
+  useArtifacts?: boolean;
+}
+
+export function buildTutorSystemPrompt(ctx: StudentContext, options?: PromptOptions): string {
   const { profile, mastery, mistakes, recentSessions, learnerMemory, memoryImports } = ctx;
+  const useVoice = options?.useVoice ?? false;
+  const useArtifacts = options?.useArtifacts ?? true;
 
   const styleMap: Record<string, string> = {
     concise: "Be concise and direct. Skip unnecessary filler.",
@@ -146,6 +153,17 @@ export function buildTutorSystemPrompt(ctx: StudentContext): string {
     }
   }
 
+  sections.push(`\n## Learning Modality`);
+  if (useVoice) {
+    sections.push(`This student's responses will be read aloud via text-to-speech. Optimize for spoken delivery:`);
+    sections.push(`- Write in a conversational, spoken tone — as if you are a tutor talking directly to the student.`);
+    sections.push(`- Use short sentences. Avoid walls of text.`);
+    sections.push(`- Spell out abbreviations and avoid symbols that sound awkward when read (use "equals" not "=", "times" not "×").`);
+    sections.push(`- Use natural pauses with commas and periods.`);
+    sections.push(`- For math, write it out verbally: "x squared plus 3x minus 7" rather than "$x^2 + 3x - 7$".`);
+    sections.push(`- Still include artifacts for quizzes and visuals when appropriate — those are rendered visually alongside the audio.`);
+  }
+
   sections.push(`\n## Behavioral Guidelines`);
   sections.push(`- Explain clearly and check understanding frequently.`);
   sections.push(`- Ask follow-up questions to verify comprehension.`);
@@ -155,31 +173,38 @@ export function buildTutorSystemPrompt(ctx: StudentContext): string {
   sections.push(`- Update your behavior as new evidence appears. The product promise is memory: remember patterns, avoid repeating failed approaches, and make continuity obvious.`);
   sections.push(`- After explaining a concept, offer a quick practice question.`);
   sections.push(`- Never be condescending. Be encouraging but honest about mistakes.`);
-  sections.push(`- Use LaTeX notation (wrapped in $ or $$) for mathematical expressions.`);
+  if (!useVoice) {
+    sections.push(`- Use LaTeX notation (wrapped in $ or $$) for mathematical expressions.`);
+  }
 
-  sections.push(`\n## Interactive Artifacts`);
-  sections.push(`You can create interactive content that renders in the student's browser. Use artifacts for quizzes, visualizations, interactive diagrams, and practice exercises.`);
-  sections.push(`To create an artifact, use this format:`);
-  sections.push("```");
-  sections.push(`:::artifact{type="quiz" title="Quick Check: Topic Name"}`);
-  sections.push(`<h2>Question text</h2>`);
-  sections.push(`<div id="quiz"><!-- HTML + JS content --></div>`);
-  sections.push(`:::`);
-  sections.push("```");
-  sections.push(`Artifact types: "quiz" for practice questions, "visualization" for charts/diagrams, "html" for interactive exercises, "code" for runnable examples.`);
-  sections.push(`Artifacts are sandboxed HTML. You can use inline <script> and <style> tags. The sandbox has a dark theme with pre-built CSS classes:`);
-  sections.push(`- .quiz-option — clickable answer buttons (add .correct or .incorrect class on click)`);
-  sections.push(`- .feedback.correct / .feedback.incorrect — result messages`);
-  sections.push(`- .card — content card`);
-  sections.push(`- .progress-bar + .progress-fill — progress indicators`);
-  sections.push(`- .chart-container — for canvas/svg visualizations`);
-  sections.push(`- Standard HTML elements (button, input, select, table, canvas) are styled automatically.`);
-  sections.push(`When to use artifacts:`);
-  sections.push(`- When the student asks to be quizzed or tested — create an interactive quiz`);
-  sections.push(`- When explaining data, comparisons, or processes — create a visualization`);
-  sections.push(`- When the student needs to practice — create an interactive exercise`);
-  sections.push(`- For step-by-step walkthroughs — create an interactive guide`);
-  sections.push(`Keep artifacts focused and self-contained. Always include explanatory text before or after the artifact.`);
+  if (useArtifacts) {
+    sections.push(`\n## Interactive Artifacts`);
+    sections.push(`You can create interactive content that renders in the student's browser. Use artifacts for quizzes, visualizations, interactive diagrams, and practice exercises.`);
+    sections.push(`To create an artifact, use this format:`);
+    sections.push("```");
+    sections.push(`:::artifact{type="quiz" title="Quick Check: Topic Name"}`);
+    sections.push(`<h2>Question text</h2>`);
+    sections.push(`<div id="quiz"><!-- HTML + JS content --></div>`);
+    sections.push(`:::`);
+    sections.push("```");
+    sections.push(`Artifact types: "quiz" for practice questions, "visualization" for charts/diagrams, "html" for interactive exercises, "code" for runnable examples.`);
+    sections.push(`Artifacts are sandboxed HTML. You can use inline <script> and <style> tags. The sandbox has a dark theme with pre-built CSS classes:`);
+    sections.push(`- .quiz-option — clickable answer buttons (add .correct or .incorrect class on click)`);
+    sections.push(`- .feedback.correct / .feedback.incorrect — result messages`);
+    sections.push(`- .card — content card`);
+    sections.push(`- .progress-bar + .progress-fill — progress indicators`);
+    sections.push(`- .chart-container — for canvas/svg visualizations`);
+    sections.push(`- Standard HTML elements (button, input, select, table, canvas) are styled automatically.`);
+    sections.push(`When to use artifacts:`);
+    sections.push(`- When the student asks to be quizzed or tested — create an interactive quiz`);
+    sections.push(`- When explaining data, comparisons, or processes — create a visualization`);
+    sections.push(`- When the student needs to practice — create an interactive exercise`);
+    sections.push(`- For step-by-step walkthroughs — create an interactive guide`);
+    if (useVoice) {
+      sections.push(`Since this student uses voice mode, create MORE artifacts to complement the audio. The student hears your words and sees the artifact simultaneously — use both channels.`);
+    }
+    sections.push(`Keep artifacts focused and self-contained. Always include explanatory text before or after the artifact.`);
+  }
 
   return sections.join("\n");
 }

@@ -23,6 +23,13 @@ interface TutorMessage {
   content: string;
 }
 
+export interface ModalityScores {
+  auditory: number;
+  visual: number;
+  reading: number;
+  reasoning: string;
+}
+
 export interface LearnerMemoryAnalysis {
   learnerType: string;
   confidence: number;
@@ -32,6 +39,7 @@ export interface LearnerMemoryAnalysis {
   preferredPatterns: string[];
   recommendedStrategies: string[];
   learnerSignals: Record<string, unknown>;
+  modalityScores?: ModalityScores;
 }
 
 const fallbackLearnerMemory: LearnerMemoryAnalysis = {
@@ -248,8 +256,19 @@ Return ONLY valid JSON with this exact shape:
     "motivation": "string",
     "bestExamples": ["string"],
     "avoid": ["string"]
+  },
+  "modalityScores": {
+    "auditory": 0.0,
+    "visual": 0.0,
+    "reading": 0.0,
+    "reasoning": "brief explanation of modality detection"
   }
 }
+
+For modalityScores, assess the learner's preferred modality (scores must sum to 1.0):
+- auditory: prefers listening, verbal explanations, discusses by talking through problems, asks for things to be "explained" or "walked through"
+- visual: prefers diagrams, charts, interactive examples, asks for visualizations, likes step-by-step visual breakdowns
+- reading: prefers written text, detailed written explanations, reads carefully, asks follow-up questions about text content
 
 Rules:
 - Do not invent private facts that are not supported by evidence.
@@ -304,6 +323,7 @@ ${transcript || "No latest tutor transcript provided."}`,
         parsed.learnerSignals && typeof parsed.learnerSignals === "object"
           ? parsed.learnerSignals
           : {},
+      modalityScores: parsed.modalityScores,
     };
   } catch {
     return fallbackLearnerMemory;

@@ -17,14 +17,18 @@ import {
 } from "lucide-react";
 import { parseArtifacts } from "@/lib/tutor/artifact-parser";
 import { ArtifactRenderer } from "@/components/artifact-renderer";
+import { VoicePlayer } from "@/components/voice-player";
+import { ModalitySwitcher } from "@/components/modality-switcher";
+import type { ModalityMode, ModalityWeights } from "@/lib/tutor/modality";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  useVoice?: boolean;
 }
 
-function MessageContent({ content }: { content: string }) {
+function MessageContent({ content, showVoice }: { content: string; showVoice?: boolean }) {
   const parsed = parseArtifacts(content);
 
   return (
@@ -39,6 +43,7 @@ function MessageContent({ content }: { content: string }) {
         }
         return <ArtifactRenderer key={seg.artifact.id} artifact={seg.artifact} />;
       })}
+      {showVoice && <VoicePlayer text={content} autoPlay />}
     </>
   );
 }
@@ -49,6 +54,8 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [modalityMode, setModalityMode] = useState<ModalityMode>("auto");
+  const [modalityWeights, setModalityWeights] = useState<ModalityWeights | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -83,6 +90,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: trimmed,
           sessionId: sessionId ?? undefined,
+          modalityMode,
         }),
       });
 
@@ -108,11 +116,15 @@ export default function ChatPage() {
       if (data.sessionId) {
         setSessionId(data.sessionId);
       }
+      if (data.modalityWeights) {
+        setModalityWeights(data.modalityWeights);
+      }
 
       const assistantMsg: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: data.response,
+        useVoice: data.activeModalities?.useVoice ?? false,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -174,6 +186,11 @@ export default function ChatPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <ModalitySwitcher
+            mode={modalityMode}
+            onModeChange={setModalityMode}
+            detectedWeights={modalityWeights}
+          />
           {sessionId && messages.length >= 2 && (
             <Button variant="outline" size="sm" onClick={handleEndSession}>
               <BookOpen className="h-4 w-4 mr-1" />
@@ -260,7 +277,7 @@ export default function ChatPage() {
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <MessageContent content={msg.content} />
+                  <MessageContent content={msg.content} showVoice={msg.useVoice} />
                 ) : (
                   <div className="text-sm whitespace-pre-wrap leading-relaxed">
                     {msg.content}
