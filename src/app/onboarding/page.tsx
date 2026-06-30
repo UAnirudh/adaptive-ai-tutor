@@ -42,7 +42,7 @@ const PROVIDERS = [
   {
     id: "ChatGPT",
     label: "ChatGPT",
-    color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
+    color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/25",
     activeColor: "ring-emerald-500/40",
     exportTip: "Settings → Data Controls → Export data. You'll get a zip with conversations.json.",
     memoryTip: "You can also ask ChatGPT: \"Tell me everything you remember about me.\"",
@@ -50,7 +50,7 @@ const PROVIDERS = [
   {
     id: "Claude",
     label: "Claude",
-    color: "bg-orange-500/15 text-orange-400 border-orange-500/25",
+    color: "bg-orange-500/10 text-orange-600 border-orange-500/25",
     activeColor: "ring-orange-500/40",
     exportTip: "Open any conversation → click the share icon → copy full conversation text.",
     memoryTip: "Ask Claude to review your past conversations and summarize your learning patterns.",
@@ -58,7 +58,7 @@ const PROVIDERS = [
   {
     id: "Gemini",
     label: "Gemini",
-    color: "bg-blue-500/15 text-blue-400 border-blue-500/25",
+    color: "bg-blue-500/10 text-blue-600 border-blue-500/25",
     activeColor: "ring-blue-500/40",
     exportTip: "Google Takeout → select Gemini Apps → export. Or copy conversations directly.",
     memoryTip: "Ask Gemini to analyze your conversation patterns and learning style.",
@@ -66,7 +66,7 @@ const PROVIDERS = [
   {
     id: "Perplexity",
     label: "Perplexity",
-    color: "bg-teal-500/15 text-teal-400 border-teal-500/25",
+    color: "bg-teal-500/10 text-teal-600 border-teal-500/25",
     activeColor: "ring-teal-500/40",
     exportTip: "Open your search history and copy relevant research threads.",
     memoryTip: "Copy a few representative research sessions that show how you learn.",
@@ -74,7 +74,7 @@ const PROVIDERS = [
   {
     id: "Copilot",
     label: "Copilot",
-    color: "bg-sky-500/15 text-sky-400 border-sky-500/25",
+    color: "bg-sky-500/10 text-sky-600 border-sky-500/25",
     activeColor: "ring-sky-500/40",
     exportTip: "Copy conversation threads from your Copilot chat history.",
     memoryTip: "Ask Copilot to summarize your typical questions and learning approach.",
@@ -82,8 +82,8 @@ const PROVIDERS = [
   {
     id: "Other",
     label: "Other",
-    color: "bg-white/10 text-white/60 border-white/15",
-    activeColor: "ring-white/30",
+    color: "bg-[#0b1c30]/5 text-[#445573] border-[#c3c6d7]/40",
+    activeColor: "ring-[#0252d9]/30",
     exportTip: "Copy conversation text or exported logs from any AI tool.",
     memoryTip: "Paste any relevant learning-related conversations.",
   },
@@ -295,19 +295,19 @@ export default function OnboardingPage() {
     memoryImports.filter((m) => m.provider === providerId);
 
   return (
-    <main className="min-h-dvh bg-[#11100d] text-white">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
-      <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_at_top,rgba(231,223,206,0.12),transparent_62%)]" />
+    <main className="min-h-dvh bg-[#f8f9ff] text-[#0b1c30]">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(2,82,217,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(2,82,217,0.04)_1px,transparent_1px)] bg-[size:48px_48px] opacity-40" />
+      <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_at_top,rgba(2,82,217,0.12),transparent_62%)]" />
 
       <div className="relative mx-auto flex min-h-dvh max-w-4xl flex-col px-5 py-6 sm:px-8">
         {/* Header */}
         <div className="flex items-center gap-3 pb-6">
-          <div className="grid h-9 w-9 place-items-center rounded-md bg-[#e7dfce] text-[#15130f]">
+          <div className="grid h-9 w-9 place-items-center rounded-md bg-[#0252d9] text-white">
             <Brain className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-semibold">Set up your tutor</p>
-            <p className="text-xs text-white/40">Takes about 3 minutes</p>
+            <p className="text-xs text-[#445573]">Takes about 3 minutes</p>
           </div>
         </div>
 
@@ -325,25 +325,25 @@ export default function OnboardingPage() {
                 disabled={!done}
                 className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                   active
-                    ? "bg-[#e7dfce]/15 text-[#e7dfce] ring-1 ring-[#e7dfce]/30"
+                    ? "bg-[#0252d9]/10 text-[#0252d9] ring-1 ring-[#0252d9]/30"
                     : done
-                      ? "bg-white/5 text-white/50 hover:bg-white/8 cursor-pointer"
-                      : "text-white/20"
+                      ? "bg-[#0b1c30]/5 text-[#445573] hover:bg-[#0b1c30]/8 cursor-pointer"
+                      : "text-[#445573]/30"
                 } ${i < STEPS.length - 1 ? "mr-1" : ""}`}
               >
                 <Icon className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{s.label}</span>
-                {done && <Check className="h-3 w-3 text-emerald-400" />}
+                {done && <Check className="h-3 w-3 text-emerald-500" />}
               </button>
             );
           })}
-          <div className="ml-auto text-xs text-white/30">{step}/{STEPS.length}</div>
+          <div className="ml-auto text-xs text-[#445573]/50">{step}/{STEPS.length}</div>
         </div>
 
         {/* Step content */}
         <div className="flex-1">
           {error && (
-            <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="mb-6 rounded-lg border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
           )}
@@ -353,13 +353,13 @@ export default function OnboardingPage() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-2xl font-semibold">Where are you in your learning journey?</h2>
-                <p className="mt-2 text-sm text-white/50">
+                <p className="mt-2 text-sm text-[#445573]">
                   Your tutor uses this to calibrate vocabulary, pacing, and the depth of every explanation.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/70">Grade level</p>
+                <p className="text-sm font-medium text-[#0b1c30]">Grade level</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {GRADE_LEVELS.map((level) => (
                     <button
@@ -367,8 +367,8 @@ export default function OnboardingPage() {
                       onClick={() => setGradeLevel(level)}
                       className={`rounded-lg border px-3 py-2.5 text-left text-sm transition-all ${
                         gradeLevel === level
-                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10 text-white"
-                          : "border-white/8 bg-white/[0.03] text-white/60 hover:border-white/15 hover:bg-white/[0.06]"
+                          ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08] text-[#0b1c30]"
+                          : "border-[#c3c6d7]/40 bg-white/50 text-[#445573] hover:border-[#0252d9]/20 hover:bg-white/70"
                       }`}
                     >
                       {level}
@@ -378,7 +378,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/70">What are you studying?</p>
+                <p className="text-sm font-medium text-[#0b1c30]">What are you studying?</p>
                 <div className="flex flex-wrap gap-2">
                   {SUBJECTS.map((subject) => (
                     <button
@@ -386,8 +386,8 @@ export default function OnboardingPage() {
                       onClick={() => toggleSubject(subject)}
                       className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
                         subjects.includes(subject)
-                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/15 text-[#e7dfce]"
-                          : "border-white/8 text-white/50 hover:border-white/15 hover:text-white/70"
+                          ? "border-[#0252d9]/40 bg-[#0252d9]/10 text-[#0252d9]"
+                          : "border-[#c3c6d7]/40 text-[#445573] hover:border-[#0252d9]/20 hover:text-[#0b1c30]"
                       }`}
                     >
                       {subject}
@@ -399,12 +399,12 @@ export default function OnboardingPage() {
                     value={customSubject}
                     onChange={(e) => setCustomSubject(e.target.value)}
                     placeholder="Something else..."
-                    className="h-10 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none"
+                    className="h-10 flex-1 rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none"
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSubject())}
                   />
                   <button
                     onClick={addCustomSubject}
-                    className="rounded-lg border border-white/10 px-4 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                    className="rounded-lg border border-[#c3c6d7] px-4 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
                   >
                     Add
                   </button>
@@ -418,38 +418,38 @@ export default function OnboardingPage() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-2xl font-semibold">What are you working toward?</h2>
-                <p className="mt-2 text-sm text-white/50">
+                <p className="mt-2 text-sm text-[#445573]">
                   Goals shape which topics get priority and how your tutor frames long-term progress.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium text-white/70">Near-term goals</p>
+                <p className="text-sm font-medium text-[#0b1c30]">Near-term goals</p>
                 <textarea
                   value={shortTermGoals}
                   onChange={(e) => setShortTermGoals(e.target.value)}
                   placeholder="Pass my calc final, finish the data structures problem set, nail the AP Bio exam..."
                   rows={3}
-                  className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-4 py-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none resize-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium text-white/70">Bigger-picture goals</p>
+                <p className="text-sm font-medium text-[#0b1c30]">Bigger-picture goals</p>
                 <textarea
                   value={longTermGoals}
                   onChange={(e) => setLongTermGoals(e.target.value)}
                   placeholder="Get into a strong CS program, become fluent in organic chem, switch careers into data science..."
                   rows={3}
-                  className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-4 py-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none resize-none"
                 />
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/70">
+                <p className="text-sm font-medium text-[#0b1c30]">
                   Interests and hobbies
                 </p>
-                <p className="text-xs text-white/35">
+                <p className="text-xs text-[#445573]">
                   Your tutor weaves these into examples and analogies so explanations actually stick.
                 </p>
                 {interests.length > 0 && (
@@ -457,10 +457,10 @@ export default function OnboardingPage() {
                     {interests.map((interest) => (
                       <span
                         key={interest}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-sm text-white/70"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[#c3c6d7]/40 bg-white/60 px-3 py-1 text-sm text-[#0b1c30]"
                       >
                         {interest}
-                        <button onClick={() => removeInterest(interest)} className="text-white/30 hover:text-white/60">
+                        <button onClick={() => removeInterest(interest)} className="text-[#445573]/40 hover:text-[#445573]">
                           <X className="h-3 w-3" />
                         </button>
                       </span>
@@ -472,12 +472,12 @@ export default function OnboardingPage() {
                     value={interestInput}
                     onChange={(e) => setInterestInput(e.target.value)}
                     placeholder="robotics, basketball, gaming, cooking, music production..."
-                    className="h-10 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none"
+                    className="h-10 flex-1 rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none"
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addInterest())}
                   />
                   <button
                     onClick={addInterest}
-                    className="rounded-lg border border-white/10 px-4 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                    className="rounded-lg border border-[#c3c6d7] px-4 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
                   >
                     Add
                   </button>
@@ -491,13 +491,13 @@ export default function OnboardingPage() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-2xl font-semibold">How should your tutor talk to you?</h2>
-                <p className="mt-2 text-sm text-white/50">
+                <p className="mt-2 text-sm text-[#445573]">
                   These defaults kick in from session one. The tutor still adapts over time as it learns your patterns.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/70">Explanation style</p>
+                <p className="text-sm font-medium text-[#0b1c30]">Explanation style</p>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {[
                     { value: "concise", label: "Concise", desc: "Straight to the point. No filler." },
@@ -509,19 +509,19 @@ export default function OnboardingPage() {
                       onClick={() => setExplanationStyle(opt.value)}
                       className={`rounded-lg border p-4 text-left transition-all ${
                         explanationStyle === opt.value
-                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10"
-                          : "border-white/8 bg-white/[0.03] hover:border-white/15"
+                          ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08]"
+                          : "border-[#c3c6d7]/40 bg-white/50 hover:border-[#0252d9]/20"
                       }`}
                     >
-                      <p className="text-sm font-medium text-white">{opt.label}</p>
-                      <p className="mt-1 text-xs text-white/45">{opt.desc}</p>
+                      <p className="text-sm font-medium text-[#0b1c30]">{opt.label}</p>
+                      <p className="mt-1 text-xs text-[#445573]">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/70">Response length</p>
+                <p className="text-sm font-medium text-[#0b1c30]">Response length</p>
                 <div className="grid grid-cols-3 gap-2">
                   {["short", "medium", "long"].map((len) => (
                     <button
@@ -529,8 +529,8 @@ export default function OnboardingPage() {
                       onClick={() => setExplanationLength(len)}
                       className={`rounded-lg border px-4 py-3 text-sm capitalize transition-all ${
                         explanationLength === len
-                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10 text-white"
-                          : "border-white/8 text-white/50 hover:border-white/15"
+                          ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08] text-[#0b1c30]"
+                          : "border-[#c3c6d7]/40 text-[#445573] hover:border-[#0252d9]/20"
                       }`}
                     >
                       {len}
@@ -540,7 +540,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/70">Starting difficulty</p>
+                <p className="text-sm font-medium text-[#0b1c30]">Starting difficulty</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {[
                     { value: "easy", label: "Gentle start", desc: "Fundamentals first, lots of examples, patient pacing." },
@@ -553,12 +553,12 @@ export default function OnboardingPage() {
                       onClick={() => setDifficultyLevel(opt.value)}
                       className={`rounded-lg border p-4 text-left transition-all ${
                         difficultyLevel === opt.value
-                          ? "border-[#e7dfce]/40 bg-[#e7dfce]/10"
-                          : "border-white/8 bg-white/[0.03] hover:border-white/15"
+                          ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08]"
+                          : "border-[#c3c6d7]/40 bg-white/50 hover:border-[#0252d9]/20"
                       }`}
                     >
-                      <p className="text-sm font-medium text-white">{opt.label}</p>
-                      <p className="mt-1 text-xs text-white/45">{opt.desc}</p>
+                      <p className="text-sm font-medium text-[#0b1c30]">{opt.label}</p>
+                      <p className="mt-1 text-xs text-[#445573]">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -571,17 +571,17 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-semibold">Bring your learning history</h2>
-                <p className="mt-2 text-sm text-white/50">
+                <p className="mt-2 text-sm text-[#445573]">
                   Your tutor gets meaningfully better when it can see how you've learned before. Import from any AI you've used — or skip this and build memory from scratch.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-[#e7dfce]/15 bg-[#e7dfce]/[0.04] p-4">
+              <div className="rounded-xl border border-[#0252d9]/15 bg-[#0252d9]/[0.04] p-4">
                 <div className="flex gap-3">
-                  <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#e7dfce]" />
+                  <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#0252d9]" />
                   <div className="text-sm leading-6">
-                    <p className="font-medium text-[#e7dfce]">How this works</p>
-                    <p className="mt-1 text-white/50">
+                    <p className="font-medium text-[#0252d9]">How this works</p>
+                    <p className="mt-1 text-[#445573]">
                       Pick a provider below. You'll get a ready-made prompt to paste into that AI — it asks it to analyze how you learn. Copy the response back here. You can also upload exported chat logs directly.
                     </p>
                   </div>
@@ -601,13 +601,13 @@ export default function OnboardingPage() {
                           ? `${p.color} ring-2 ${p.activeColor}`
                           : hasImports
                             ? `${p.color}`
-                            : "border-white/8 bg-white/[0.03] text-white/60 hover:border-white/15"
+                            : "border-[#c3c6d7]/40 bg-white/50 text-[#445573] hover:border-[#0252d9]/20"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">{p.label}</span>
                         {hasImports && (
-                          <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-500/20 text-xs text-emerald-400">
+                          <span className="grid h-5 w-5 place-items-center rounded-full bg-emerald-500/15 text-xs text-emerald-600">
                             {providerImports(p.id).length}
                           </span>
                         )}
@@ -623,12 +623,12 @@ export default function OnboardingPage() {
                 const imports = providerImports(activeProvider);
 
                 return (
-                  <div className="rounded-xl border border-white/10 bg-[#171511]/80 p-5 space-y-5">
+                  <div className="glass-elevated rounded-xl p-5 space-y-5">
                     <div className="flex items-center justify-between">
                       <h3 className="text-base font-medium">Import from {provider.label}</h3>
                       <button
                         onClick={() => setActiveProvider(null)}
-                        className="text-white/30 hover:text-white/60"
+                        className="text-[#445573]/40 hover:text-[#445573]"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -637,26 +637,26 @@ export default function OnboardingPage() {
                     {/* Option 1: Extraction prompt */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <MessageSquareText className="h-4 w-4 text-[#e7dfce]" />
-                        <p className="text-sm font-medium text-white/80">Option 1: Ask {provider.label} to analyze your learning</p>
+                        <MessageSquareText className="h-4 w-4 text-[#0252d9]" />
+                        <p className="text-sm font-medium">Option 1: Ask {provider.label} to analyze your learning</p>
                       </div>
-                      <div className="rounded-lg border border-white/8 bg-black/30 p-4">
+                      <div className="rounded-lg border border-[#c3c6d7]/30 bg-[#f0f4ff]/60 p-4">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-xs leading-5 text-white/40 line-clamp-3">
+                          <p className="text-xs leading-5 text-[#445573] line-clamp-3">
                             {buildExtractionPrompt(provider.id).slice(0, 180)}...
                           </p>
                           <button
                             onClick={() => copyPrompt(provider.id)}
-                            className="shrink-0 rounded-md border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10"
+                            className="shrink-0 rounded-md border border-[#c3c6d7] bg-white/70 px-3 py-1.5 text-xs font-medium text-[#445573] transition hover:bg-white"
                           >
                             {copiedPrompt ? (
-                              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-emerald-400" /> Copied</span>
+                              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-emerald-500" /> Copied</span>
                             ) : (
                               <span className="flex items-center gap-1"><Copy className="h-3 w-3" /> Copy prompt</span>
                             )}
                           </button>
                         </div>
-                        <p className="mt-3 text-xs text-white/30">
+                        <p className="mt-3 text-xs text-[#445573]/60">
                           {provider.memoryTip}
                         </p>
                       </div>
@@ -665,42 +665,42 @@ export default function OnboardingPage() {
                     {/* Option 2: File upload */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Upload className="h-4 w-4 text-[#e7dfce]" />
-                        <p className="text-sm font-medium text-white/80">Option 2: Upload exported chat logs</p>
+                        <Upload className="h-4 w-4 text-[#0252d9]" />
+                        <p className="text-sm font-medium">Option 2: Upload exported chat logs</p>
                       </div>
-                      <p className="text-xs text-white/35">{provider.exportTip}</p>
+                      <p className="text-xs text-[#445573]">{provider.exportTip}</p>
                     </div>
 
                     {/* Import slots */}
                     {imports.map((imp) => (
-                      <div key={imp.id} className="rounded-lg border border-white/8 bg-white/[0.02] p-4 space-y-3">
+                      <div key={imp.id} className="rounded-lg border border-[#c3c6d7]/30 bg-white/50 p-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             {imp.fileName ? (
-                              <FileText className="h-4 w-4 text-white/40" />
+                              <FileText className="h-4 w-4 text-[#445573]" />
                             ) : (
-                              <MessageSquareText className="h-4 w-4 text-white/40" />
+                              <MessageSquareText className="h-4 w-4 text-[#445573]" />
                             )}
                             <input
                               value={imp.sourceLabel}
                               onChange={(e) => updateMemoryImport(imp.id, "sourceLabel", e.target.value)}
                               placeholder="Label this import (optional)"
-                              className="bg-transparent text-sm text-white placeholder:text-white/25 focus:outline-none"
+                              className="bg-transparent text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:outline-none"
                             />
                           </div>
                           <button
                             onClick={() => removeMemoryImport(imp.id)}
-                            className="text-white/25 hover:text-white/50"
+                            className="text-[#445573]/30 hover:text-[#445573]"
                           >
                             <X className="h-4 w-4" />
                           </button>
                         </div>
 
                         {imp.fileName ? (
-                          <div className="flex items-center gap-2 rounded-md bg-white/[0.04] px-3 py-2 text-xs text-white/50">
+                          <div className="flex items-center gap-2 rounded-md bg-[#f0f4ff]/60 px-3 py-2 text-xs text-[#445573]">
                             <FileText className="h-3.5 w-3.5" />
                             {imp.fileName}
-                            <span className="ml-auto text-white/30">
+                            <span className="ml-auto text-[#445573]/50">
                               {Math.round(imp.rawText.length / 1000)}k chars
                             </span>
                           </div>
@@ -710,7 +710,7 @@ export default function OnboardingPage() {
                             onChange={(e) => updateMemoryImport(imp.id, "rawText", e.target.value)}
                             placeholder={`Paste ${provider.label}'s analysis of your learning style here...`}
                             rows={6}
-                            className="w-full rounded-lg border border-white/8 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-[#e7dfce]/20 focus:outline-none resize-y"
+                            className="w-full rounded-lg border border-[#c3c6d7]/30 bg-white/60 px-3 py-2.5 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/30 focus:outline-none resize-y"
                           />
                         )}
                       </div>
@@ -720,7 +720,7 @@ export default function OnboardingPage() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => addMemoryImport(activeProvider)}
-                        className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                        className="flex items-center gap-2 rounded-lg border border-[#c3c6d7] px-4 py-2 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
                       >
                         <PlusCircle className="h-4 w-4" />
                         Paste response
@@ -735,7 +735,7 @@ export default function OnboardingPage() {
                           setTimeout(() => fileInputRef.current?.click(), 50);
                           fileInputRef.current?.setAttribute("data-import-id", id);
                         }}
-                        className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                        className="flex items-center gap-2 rounded-lg border border-[#c3c6d7] px-4 py-2 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
                       >
                         <Upload className="h-4 w-4" />
                         Upload file
@@ -761,9 +761,9 @@ export default function OnboardingPage() {
               })()}
 
               {memoryImports.length === 0 && !activeProvider && (
-                <div className="rounded-lg border border-dashed border-white/10 p-8 text-center">
-                  <Database className="mx-auto h-8 w-8 text-white/15" />
-                  <p className="mt-3 text-sm text-white/35">
+                <div className="rounded-lg border border-dashed border-[#c3c6d7]/50 p-8 text-center">
+                  <Database className="mx-auto h-8 w-8 text-[#0252d9]/15" />
+                  <p className="mt-3 text-sm text-[#445573]">
                     Pick a provider above to start importing, or skip this step and let the tutor learn from your sessions.
                   </p>
                 </div>
@@ -776,49 +776,49 @@ export default function OnboardingPage() {
             <div className="space-y-8">
               <div>
                 <h2 className="text-2xl font-semibold">Everything look right?</h2>
-                <p className="mt-2 text-sm text-white/50">
+                <p className="mt-2 text-sm text-[#445573]">
                   You can change any of this later in Settings. The tutor keeps refining its model of you after every session.
                 </p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
-                  <p className="text-xs font-medium text-white/40">Level</p>
+                <div className="glass rounded-lg p-4 space-y-2">
+                  <p className="text-xs font-medium text-[#445573]">Level</p>
                   <p className="text-sm font-medium">{gradeLevel || "Not set"}</p>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
-                  <p className="text-xs font-medium text-white/40">Subjects</p>
+                <div className="glass rounded-lg p-4 space-y-2">
+                  <p className="text-xs font-medium text-[#445573]">Subjects</p>
                   <div className="flex flex-wrap gap-1">
                     {subjects.map((s) => (
-                      <span key={s} className="rounded-full bg-[#e7dfce]/10 px-2 py-0.5 text-xs text-[#e7dfce]">
+                      <span key={s} className="rounded-full bg-[#0252d9]/10 px-2 py-0.5 text-xs text-[#0252d9]">
                         {s}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
-                  <p className="text-xs font-medium text-white/40">Style</p>
+                <div className="glass rounded-lg p-4 space-y-2">
+                  <p className="text-xs font-medium text-[#445573]">Style</p>
                   <p className="text-sm capitalize">{explanationStyle} / {explanationLength} / {difficultyLevel}</p>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2">
-                  <p className="text-xs font-medium text-white/40">Memory imports</p>
+                <div className="glass rounded-lg p-4 space-y-2">
+                  <p className="text-xs font-medium text-[#445573]">Memory imports</p>
                   <p className="text-sm">
                     {memoryImports.filter((m) => m.rawText.trim().length >= 20).length} source(s) ready to analyze
                   </p>
                 </div>
                 {interests.length > 0 && (
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-2 sm:col-span-2">
-                    <p className="text-xs font-medium text-white/40">Interests</p>
-                    <p className="text-sm text-white/70">{interests.join(", ")}</p>
+                  <div className="glass rounded-lg p-4 space-y-2 sm:col-span-2">
+                    <p className="text-xs font-medium text-[#445573]">Interests</p>
+                    <p className="text-sm text-[#0b1c30]">{interests.join(", ")}</p>
                   </div>
                 )}
               </div>
 
               {loading && (
-                <div className="rounded-lg border border-[#e7dfce]/15 bg-[#e7dfce]/[0.04] p-4">
+                <div className="rounded-lg border border-[#0252d9]/15 bg-[#0252d9]/[0.04] p-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#e7dfce]/30 border-t-[#e7dfce]" />
-                    <p className="text-sm text-[#e7dfce]">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0252d9]/30 border-t-[#0252d9]" />
+                    <p className="text-sm text-[#0252d9]">
                       Building your learner model — analyzing imports and setting up your tutor...
                     </p>
                   </div>
@@ -829,11 +829,11 @@ export default function OnboardingPage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between border-t border-white/8 pt-5 mt-8">
+        <div className="flex items-center justify-between border-t border-[#c3c6d7]/30 pt-5 mt-8">
           <button
             onClick={() => setStep((s) => s - 1)}
             disabled={step === 1}
-            className="flex items-center gap-1 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 transition hover:border-white/20 hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+            className="flex items-center gap-1 rounded-lg border border-[#c3c6d7] px-4 py-2.5 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9] disabled:opacity-30 disabled:pointer-events-none"
           >
             <ChevronLeft className="h-4 w-4" /> Back
           </button>
@@ -842,7 +842,7 @@ export default function OnboardingPage() {
             <button
               onClick={() => setStep((s) => s + 1)}
               disabled={!canProceed()}
-              className="flex items-center gap-1 rounded-lg bg-[#e7dfce] px-5 py-2.5 text-sm font-medium text-[#15130f] transition hover:bg-[#fff4dc] disabled:opacity-40 disabled:pointer-events-none"
+              className="flex items-center gap-1 rounded-lg bg-[#0252d9] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#003da7] disabled:opacity-40 disabled:pointer-events-none"
             >
               Continue <ChevronRight className="h-4 w-4" />
             </button>
@@ -850,11 +850,11 @@ export default function OnboardingPage() {
             <button
               onClick={handleSubmit}
               disabled={loading || !canProceed()}
-              className="flex items-center gap-2 rounded-lg bg-[#e7dfce] px-6 py-2.5 text-sm font-medium text-[#15130f] transition hover:bg-[#fff4dc] disabled:opacity-40 disabled:pointer-events-none"
+              className="flex items-center gap-2 rounded-lg bg-[#0252d9] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[#003da7] disabled:opacity-40 disabled:pointer-events-none"
             >
               {loading ? (
                 <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#15130f]/30 border-t-[#15130f]" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Building memory...
                 </>
               ) : (

@@ -167,8 +167,8 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#11100d]">
-        <Loader2 className="h-8 w-8 animate-spin text-white/30" />
+      <main className="flex min-h-dvh items-center justify-center bg-[#f8f9ff]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#445573]/40" />
       </main>
     );
   }
@@ -180,9 +180,9 @@ export default function SettingsPage() {
   ];
 
   return (
-    <main className="min-h-dvh bg-[#11100d] text-white">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
-      <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_at_top,rgba(231,223,206,0.08),transparent_62%)]" />
+    <main className="min-h-dvh bg-[#f8f9ff] text-[#0b1c30]">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(2,82,217,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(2,82,217,0.04)_1px,transparent_1px)] bg-[size:48px_48px] opacity-40" />
+      <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_at_top,rgba(2,82,217,0.08),transparent_62%)]" />
 
       <div className="relative mx-auto max-w-3xl px-5 py-6 sm:px-8">
         {/* Header */}
@@ -190,11 +190,11 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-white/50 transition hover:border-white/20 hover:text-white"
+              className="grid h-8 w-8 place-items-center rounded-md border border-[#c3c6d7] text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
             >
               <ChevronLeft className="h-4 w-4" />
             </Link>
-            <div className="grid h-9 w-9 place-items-center rounded-md bg-[#e7dfce] text-[#15130f]">
+            <div className="grid h-9 w-9 place-items-center rounded-md bg-[#0252d9] text-white">
               <Brain className="h-5 w-5" />
             </div>
             <h1 className="text-lg font-semibold">Settings</h1>
@@ -203,12 +203,12 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-[#e7dfce] px-4 py-2 text-sm font-medium text-[#15130f] transition hover:bg-[#fff4dc] disabled:opacity-40"
+            className="flex items-center gap-2 rounded-lg bg-[#0252d9] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#003da7] disabled:opacity-40"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : saved ? (
-              <Check className="h-4 w-4 text-emerald-600" />
+              <Check className="h-4 w-4 text-emerald-300" />
             ) : (
               <Save className="h-4 w-4" />
             )}
@@ -217,13 +217,13 @@ export default function SettingsPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div className="mb-6 rounded-lg border border-red-500/20 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
         {/* Tabs */}
-        <div className="mb-8 flex gap-1 rounded-lg border border-white/8 bg-white/[0.03] p-1">
+        <div className="mb-8 flex gap-1 rounded-lg border border-[#c3c6d7]/30 bg-white/50 p-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -232,8 +232,8 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition ${
                   activeTab === tab.id
-                    ? "bg-[#e7dfce]/15 text-[#e7dfce]"
-                    : "text-white/40 hover:text-white/60"
+                    ? "bg-[#0252d9]/10 text-[#0252d9]"
+                    : "text-[#445573] hover:text-[#0b1c30]"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -247,7 +247,7 @@ export default function SettingsPage() {
         {activeTab === "profile" && (
           <div className="space-y-8">
             <div className="space-y-3">
-              <p className="text-sm font-medium text-white/70">Grade level</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Grade level</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {GRADE_LEVELS.map((level) => (
                   <button
@@ -255,8 +255,8 @@ export default function SettingsPage() {
                     onClick={() => setGradeLevel(level)}
                     className={`rounded-lg border px-3 py-2.5 text-left text-sm transition-all ${
                       gradeLevel === level
-                        ? "border-[#e7dfce]/40 bg-[#e7dfce]/10 text-white"
-                        : "border-white/8 bg-white/[0.03] text-white/60 hover:border-white/15"
+                        ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08] text-[#0b1c30]"
+                        : "border-[#c3c6d7]/40 bg-white/50 text-[#445573] hover:border-[#0252d9]/20"
                     }`}
                   >
                     {level}
@@ -266,7 +266,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-white/70">Subjects</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Subjects</p>
               <div className="flex flex-wrap gap-2">
                 {SUBJECTS.map((subject) => (
                   <button
@@ -274,8 +274,8 @@ export default function SettingsPage() {
                     onClick={() => toggleSubject(subject)}
                     className={`rounded-full border px-3 py-1.5 text-sm transition-all ${
                       subjects.includes(subject)
-                        ? "border-[#e7dfce]/40 bg-[#e7dfce]/15 text-[#e7dfce]"
-                        : "border-white/8 text-white/50 hover:border-white/15"
+                        ? "border-[#0252d9]/40 bg-[#0252d9]/10 text-[#0252d9]"
+                        : "border-[#c3c6d7]/40 text-[#445573] hover:border-[#0252d9]/20"
                     }`}
                   >
                     {subject}
@@ -285,7 +285,7 @@ export default function SettingsPage() {
                   <button
                     key={s}
                     onClick={() => toggleSubject(s)}
-                    className="rounded-full border border-[#e7dfce]/40 bg-[#e7dfce]/15 px-3 py-1.5 text-sm text-[#e7dfce]"
+                    className="rounded-full border border-[#0252d9]/40 bg-[#0252d9]/10 px-3 py-1.5 text-sm text-[#0252d9]"
                   >
                     {s}
                   </button>
@@ -296,12 +296,12 @@ export default function SettingsPage() {
                   value={customSubject}
                   onChange={(e) => setCustomSubject(e.target.value)}
                   placeholder="Add subject..."
-                  className="h-10 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none"
+                  className="h-10 flex-1 rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none"
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSubject())}
                 />
                 <button
                   onClick={addCustomSubject}
-                  className="rounded-lg border border-white/10 px-4 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                  className="rounded-lg border border-[#c3c6d7] px-4 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
                 >
                   Add
                 </button>
@@ -309,38 +309,38 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium text-white/70">Near-term goals</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Near-term goals</p>
               <textarea
                 value={shortTermGoals}
                 onChange={(e) => setShortTermGoals(e.target.value)}
                 rows={3}
-                className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none resize-none"
+                className="w-full rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-4 py-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none resize-none"
               />
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium text-white/70">Bigger-picture goals</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Bigger-picture goals</p>
               <textarea
                 value={longTermGoals}
                 onChange={(e) => setLongTermGoals(e.target.value)}
                 rows={3}
-                className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none resize-none"
+                className="w-full rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-4 py-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none resize-none"
               />
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-white/70">Interests and hobbies</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Interests and hobbies</p>
               {interests.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {interests.map((interest) => (
                     <span
                       key={interest}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-sm text-white/70"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#c3c6d7]/40 bg-white/60 px-3 py-1 text-sm text-[#0b1c30]"
                     >
                       {interest}
                       <button
                         onClick={() => setInterests((prev) => prev.filter((i) => i !== interest))}
-                        className="text-white/30 hover:text-white/60"
+                        className="text-[#445573]/40 hover:text-[#445573]"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -353,12 +353,12 @@ export default function SettingsPage() {
                   value={interestInput}
                   onChange={(e) => setInterestInput(e.target.value)}
                   placeholder="Add interest..."
-                  className="h-10 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-white/30 focus:border-[#e7dfce]/30 focus:outline-none"
+                  className="h-10 flex-1 rounded-lg border border-[#c3c6d7]/50 bg-white/60 px-3 text-sm text-[#0b1c30] placeholder:text-[#445573]/40 focus:border-[#0252d9]/40 focus:outline-none"
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addInterest())}
                 />
                 <button
                   onClick={addInterest}
-                  className="rounded-lg border border-white/10 px-4 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                  className="rounded-lg border border-[#c3c6d7] px-4 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
                 >
                   Add
                 </button>
@@ -371,7 +371,7 @@ export default function SettingsPage() {
         {activeTab === "preferences" && (
           <div className="space-y-8">
             <div className="space-y-3">
-              <p className="text-sm font-medium text-white/70">Explanation style</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Explanation style</p>
               <div className="grid gap-2 sm:grid-cols-3">
                 {[
                   { value: "concise", label: "Concise", desc: "Straight to the point." },
@@ -383,19 +383,19 @@ export default function SettingsPage() {
                     onClick={() => setExplanationStyle(opt.value)}
                     className={`rounded-lg border p-4 text-left transition-all ${
                       explanationStyle === opt.value
-                        ? "border-[#e7dfce]/40 bg-[#e7dfce]/10"
-                        : "border-white/8 bg-white/[0.03] hover:border-white/15"
+                        ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08]"
+                        : "border-[#c3c6d7]/40 bg-white/50 hover:border-[#0252d9]/20"
                     }`}
                   >
-                    <p className="text-sm font-medium text-white">{opt.label}</p>
-                    <p className="mt-1 text-xs text-white/45">{opt.desc}</p>
+                    <p className="text-sm font-medium text-[#0b1c30]">{opt.label}</p>
+                    <p className="mt-1 text-xs text-[#445573]">{opt.desc}</p>
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-white/70">Response length</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Response length</p>
               <div className="grid grid-cols-3 gap-2">
                 {["short", "medium", "long"].map((len) => (
                   <button
@@ -403,8 +403,8 @@ export default function SettingsPage() {
                     onClick={() => setExplanationLength(len)}
                     className={`rounded-lg border px-4 py-3 text-sm capitalize transition-all ${
                       explanationLength === len
-                        ? "border-[#e7dfce]/40 bg-[#e7dfce]/10 text-white"
-                        : "border-white/8 text-white/50 hover:border-white/15"
+                        ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08] text-[#0b1c30]"
+                        : "border-[#c3c6d7]/40 text-[#445573] hover:border-[#0252d9]/20"
                     }`}
                   >
                     {len}
@@ -414,7 +414,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-white/70">Difficulty level</p>
+              <p className="text-sm font-medium text-[#0b1c30]">Difficulty level</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {[
                   { value: "easy", label: "Gentle start", desc: "Fundamentals, lots of examples, patient pacing." },
@@ -427,12 +427,12 @@ export default function SettingsPage() {
                     onClick={() => setDifficultyLevel(opt.value)}
                     className={`rounded-lg border p-4 text-left transition-all ${
                       difficultyLevel === opt.value
-                        ? "border-[#e7dfce]/40 bg-[#e7dfce]/10"
-                        : "border-white/8 bg-white/[0.03] hover:border-white/15"
+                        ? "border-[#0252d9]/40 bg-[#0252d9]/[0.08]"
+                        : "border-[#c3c6d7]/40 bg-white/50 hover:border-[#0252d9]/20"
                     }`}
                   >
-                    <p className="text-sm font-medium text-white">{opt.label}</p>
-                    <p className="mt-1 text-xs text-white/45">{opt.desc}</p>
+                    <p className="text-sm font-medium text-[#0b1c30]">{opt.label}</p>
+                    <p className="mt-1 text-xs text-[#445573]">{opt.desc}</p>
                   </button>
                 ))}
               </div>
@@ -444,31 +444,31 @@ export default function SettingsPage() {
         {activeTab === "memory" && (
           <div className="space-y-6">
             {!memory ? (
-              <div className="rounded-xl border border-dashed border-white/10 p-10 text-center">
-                <Database className="mx-auto h-10 w-10 text-white/15" />
-                <p className="mt-4 text-sm text-white/40">
+              <div className="rounded-xl border border-dashed border-[#c3c6d7]/50 p-10 text-center">
+                <Database className="mx-auto h-10 w-10 text-[#0252d9]/15" />
+                <p className="mt-4 text-sm text-[#445573]">
                   No learner memory built yet. Complete a tutoring session or import data during onboarding to start building your model.
                 </p>
                 <Link
                   href="/onboarding"
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#c3c6d7] px-4 py-2 text-sm text-[#445573] transition hover:border-[#0252d9]/40 hover:text-[#0252d9]"
                 >
                   <PlusCircle className="h-4 w-4" /> Import from onboarding
                 </Link>
               </div>
             ) : (
               <>
-                <div className="rounded-xl border border-[#e7dfce]/15 bg-[#e7dfce]/[0.04] p-5">
+                <div className="rounded-xl border border-[#0252d9]/15 bg-[#0252d9]/[0.04] p-5">
                   <div className="flex items-start gap-3">
-                    <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#e7dfce]" />
+                    <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#0252d9]" />
                     <div>
-                      <p className="text-sm font-medium text-[#e7dfce]">
+                      <p className="text-sm font-medium text-[#0252d9]">
                         {memory.learnerType || "Building learner model..."}
                       </p>
                       {memory.summary && (
-                        <p className="mt-2 text-sm leading-6 text-white/50">{memory.summary}</p>
+                        <p className="mt-2 text-sm leading-6 text-[#445573]">{memory.summary}</p>
                       )}
-                      <div className="mt-3 flex gap-4 text-xs text-white/30">
+                      <div className="mt-3 flex gap-4 text-xs text-[#445573]/60">
                         <span>Confidence: {Math.round(memory.confidence * 100)}%</span>
                         <span>{memory.sourceCount} source(s)</span>
                         <span>{memory.evidenceCount} evidence update(s)</span>
@@ -484,17 +484,17 @@ export default function SettingsPage() {
                     ["Preferred patterns", memory.preferredPatterns, SlidersHorizontal],
                     ["Recommended strategies", memory.recommendedStrategies, GraduationCap],
                   ] as const).map(([title, items, Icon]) => (
-                    <div key={title} className="rounded-lg border border-white/8 bg-white/[0.03] p-4">
+                    <div key={title} className="glass rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-white/30" />
-                        <p className="text-sm font-medium text-white/70">{title}</p>
+                        <Icon className="h-4 w-4 text-[#445573]/50" />
+                        <p className="text-sm font-medium text-[#0b1c30]">{title}</p>
                       </div>
                       {items.length === 0 ? (
-                        <p className="mt-3 text-sm text-white/25">More evidence needed.</p>
+                        <p className="mt-3 text-sm text-[#445573]/50">More evidence needed.</p>
                       ) : (
                         <ul className="mt-3 space-y-2">
                           {items.map((item) => (
-                            <li key={item} className="text-sm leading-5 text-white/50">{item}</li>
+                            <li key={item} className="text-sm leading-5 text-[#445573]">{item}</li>
                           ))}
                         </ul>
                       )}
@@ -502,10 +502,10 @@ export default function SettingsPage() {
                   ))}
                 </div>
 
-                <div className="rounded-lg border border-white/8 bg-white/[0.03] p-4">
-                  <p className="text-xs text-white/30">
+                <div className="glass rounded-lg p-4">
+                  <p className="text-xs text-[#445573]">
                     Memory updates automatically after each tutoring session. To import more data from another AI, go to{" "}
-                    <Link href="/onboarding" className="underline hover:text-white/50">onboarding</Link>.
+                    <Link href="/onboarding" className="underline hover:text-[#0252d9]">onboarding</Link>.
                   </p>
                 </div>
               </>

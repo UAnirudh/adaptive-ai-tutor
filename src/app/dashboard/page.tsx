@@ -152,7 +152,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-white/10 bg-card/70 px-6 py-4 flex items-center justify-between backdrop-blur">
+      <header className="glass-elevated border-b border-[#c3c6d7]/40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Brain className="h-6 w-6 text-primary" />
           <h1 className="font-semibold text-lg">Dashboard</h1>
@@ -212,21 +212,21 @@ export default function DashboardPage() {
               icon: Brain,
             },
           ].map((stat) => (
-            <Card key={stat.label} className="border-white/10 bg-card/85">
+            <Card key={stat.label} className="glass">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{stat.label}</p>
                     <p className="text-2xl font-bold">{stat.value}</p>
                   </div>
-                  <stat.icon className="h-8 w-8 text-muted-foreground/30" />
+                  <stat.icon className="h-8 w-8 text-[#0252d9]/20" />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <Card className="overflow-hidden border-white/10 bg-card/85">
+        <Card className="glass-elevated overflow-hidden">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {!learnerMemory ? (
-              <div className="rounded-lg border border-dashed border-white/15 p-6 text-sm text-muted-foreground">
+              <div className="rounded-lg border border-dashed border-[#c3c6d7]/50 p-6 text-sm text-muted-foreground">
                 Import provider logs during onboarding or complete a chat session
                 to build the first learner memory.
               </div>
@@ -261,13 +261,13 @@ export default function DashboardPage() {
                     </p>
                   )}
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-lg bg-background/45 p-3">
+                    <div className="rounded-lg bg-[#f0f4ff]/80 p-3">
                       <p className="text-xs text-muted-foreground">Confidence</p>
                       <p className="mt-1 text-xl font-semibold">
                         {Math.round(learnerMemory.confidence * 100)}%
                       </p>
                     </div>
-                    <div className="rounded-lg bg-background/45 p-3">
+                    <div className="rounded-lg bg-[#f0f4ff]/80 p-3">
                       <p className="text-xs text-muted-foreground">Imported sources</p>
                       <p className="mt-1 text-xl font-semibold">
                         {learnerMemory.sourceCount}
@@ -283,7 +283,7 @@ export default function DashboardPage() {
                     ["Preferred patterns", learnerMemory.preferredPatterns],
                     ["Tutor strategies", learnerMemory.recommendedStrategies],
                   ].map(([title, items]) => (
-                    <div key={title as string} className="rounded-lg bg-background/45 p-4">
+                    <div key={title as string} className="rounded-lg bg-[#f0f4ff]/80 p-4">
                       <p className="text-sm font-medium">{title as string}</p>
                       {(items as string[]).length === 0 ? (
                         <p className="mt-2 text-sm text-muted-foreground">
@@ -308,7 +308,7 @@ export default function DashboardPage() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Profile Summary */}
-          <Card>
+          <Card className="glass">
             <CardHeader>
               <CardTitle className="text-base">Your Profile</CardTitle>
             </CardHeader>
@@ -357,7 +357,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Subject Mastery */}
-          <Card>
+          <Card className="glass">
             <CardHeader>
               <CardTitle className="text-base">Subject Mastery</CardTitle>
               <CardDescription>
@@ -398,8 +398,7 @@ export default function DashboardPage() {
 
           {/* Recommended & Mistakes */}
           <div className="space-y-6">
-            {/* Recommended Next */}
-            <Card>
+            <Card className="glass">
               <CardHeader>
                 <CardTitle className="text-base">Recommended Next</CardTitle>
                 <CardDescription>Topics to focus on</CardDescription>
@@ -422,8 +421,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Recurring Mistakes */}
-            <Card>
+            <Card className="glass">
               <CardHeader>
                 <CardTitle className="text-base">Recurring Mistakes</CardTitle>
               </CardHeader>
@@ -458,7 +456,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Sessions */}
-        <Card>
+        <Card className="glass">
           <CardHeader>
             <CardTitle className="text-base">Recent Sessions</CardTitle>
             <CardDescription>Your latest tutoring sessions</CardDescription>
@@ -466,7 +464,7 @@ export default function DashboardPage() {
           <CardContent>
             {recentSessions.length === 0 ? (
               <div className="text-center py-8 space-y-3">
-                <BookOpen className="h-10 w-10 mx-auto text-muted-foreground/30" />
+                <BookOpen className="h-10 w-10 mx-auto text-[#0252d9]/20" />
                 <p className="text-sm text-muted-foreground">
                   No sessions yet. Start chatting with your tutor!
                 </p>

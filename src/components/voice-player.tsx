@@ -11,17 +11,25 @@ interface VoicePlayerProps {
 
 export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
+  const animRef = useRef<number>(0);
   const [status, setStatus] = useState<"idle" | "loading" | "playing" | "paused" | "error">("idle");
   const [progress, setProgress] = useState(0);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const animRef = useRef<number>(0);
 
-  const cleanup = useCallback(() => {
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    if (animRef.current) cancelAnimationFrame(animRef.current);
-  }, [audioUrl]);
-
-  useEffect(() => () => cleanup(), [cleanup]);
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute("src");
+        audioRef.current = null;
+      }
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, []);
 
   const updateProgress = useCallback(() => {
     const audio = audioRef.current;
@@ -35,7 +43,7 @@ export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProp
   async function loadAndPlay() {
     if (status === "loading") return;
 
-    if (audioRef.current && audioUrl) {
+    if (audioRef.current && urlRef.current) {
       if (status === "paused") {
         audioRef.current.play();
         setStatus("playing");
@@ -65,8 +73,9 @@ export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProp
       }
 
       const blob = await res.blob();
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
       const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
+      urlRef.current = url;
 
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -92,7 +101,6 @@ export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProp
     if (autoPlay && status === "idle") {
       loadAndPlay();
     }
-    // Only on mount when autoPlay is true
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -106,7 +114,7 @@ export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProp
 
   const label = {
     idle: "Listen",
-    loading: "Generating voice…",
+    loading: "Generating voice...",
     playing: "Pause",
     paused: "Resume",
     error: "Voice unavailable",
@@ -116,8 +124,8 @@ export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProp
     <div className="mt-2 flex items-center gap-2">
       <button
         onClick={loadAndPlay}
-        disabled={status === "loading" || status === "error"}
-        className="flex items-center gap-2 rounded-lg border border-[#e7dfce]/20 bg-[#e7dfce]/[0.06] px-3 py-2 text-sm text-[#e7dfce] transition hover:bg-[#e7dfce]/[0.12] disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={status === "loading"}
+        className="flex items-center gap-2 rounded-lg border border-[#0252d9]/20 bg-[#0252d9]/[0.06] px-3 py-2 text-sm text-[#0252d9] transition hover:bg-[#0252d9]/[0.12] disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {icon}
         <span>{label}</span>
@@ -125,9 +133,9 @@ export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProp
 
       {(status === "playing" || status === "paused") && (
         <div className="flex-1 max-w-48">
-          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-1.5 rounded-full bg-[#e5eeff] overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#e7dfce] transition-[width] duration-100"
+              className="h-full rounded-full bg-[#0252d9] transition-[width] duration-100"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -136,8 +144,15 @@ export function VoicePlayer({ text, voiceId, autoPlay = false }: VoicePlayerProp
 
       {status === "error" && (
         <button
-          onClick={() => { setStatus("idle"); setAudioUrl(null); }}
-          className="text-xs text-white/40 hover:text-white/60"
+          onClick={() => {
+            setStatus("idle");
+            if (urlRef.current) {
+              URL.revokeObjectURL(urlRef.current);
+              urlRef.current = null;
+            }
+            audioRef.current = null;
+          }}
+          className="text-xs text-[#445573]/60 hover:text-[#445573]"
         >
           Retry
         </button>

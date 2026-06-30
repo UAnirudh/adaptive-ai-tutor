@@ -168,7 +168,7 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-white/10 px-4 py-3 flex items-center justify-between bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <header className="glass-elevated relative z-20 border-b border-[#c3c6d7]/40 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground">
             <Brain className="h-5 w-5" />
@@ -180,7 +180,7 @@ export default function ChatPage() {
             </p>
           </div>
           {sessionId && (
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+            <span className="text-xs text-[#0252d9] bg-[#0252d9]/[0.08] px-2 py-0.5 rounded-md">
               Session active
             </span>
           )}
@@ -223,7 +223,7 @@ export default function ChatPage() {
         <div className="mx-auto max-w-3xl py-6 space-y-6">
           {messages.length === 0 && (
             <div className="mx-auto max-w-2xl py-20 text-center">
-              <div className="mx-auto grid h-16 w-16 place-items-center rounded-lg border border-white/10 bg-card">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-lg border border-[#c3c6d7]/40 glass">
                 <Brain className="h-8 w-8 text-primary" />
               </div>
               <h2 className="mt-6 text-2xl font-semibold">
@@ -273,7 +273,7 @@ export default function ChatPage() {
                 className={`rounded-xl px-4 py-3 max-w-[85%] border ${
                   msg.role === "user"
                     ? "border-primary/20 bg-primary text-primary-foreground"
-                    : "border-white/10 bg-card"
+                    : "border-[#c3c6d7]/40 glass"
                 }`}
               >
                 {msg.role === "assistant" ? (
@@ -299,7 +299,7 @@ export default function ChatPage() {
                   AI
                 </AvatarFallback>
               </Avatar>
-              <div className="rounded-xl border border-white/10 bg-card px-4 py-3">
+              <div className="rounded-xl border border-[#c3c6d7]/40 glass px-4 py-3">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function ChatPage() {
       </ScrollArea>
 
       {/* Input */}
-      <div className="border-t border-white/10 bg-card/70 p-4 backdrop-blur">
+      <div className="border-t border-[#c3c6d7]/40 glass p-4">
         <div className="mx-auto max-w-3xl flex gap-2">
           <Textarea
             ref={textareaRef}

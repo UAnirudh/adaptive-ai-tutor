@@ -29,20 +29,21 @@ export function getActiveModalities(mode: ModalityMode, weights: ModalityWeights
   useArtifacts: boolean;
   useText: boolean;
 } {
-  if (mode === "auditory") return { useVoice: true, useArtifacts: false, useText: true };
+  if (mode === "auditory") return { useVoice: true, useArtifacts: true, useText: true };
   if (mode === "visual") return { useVoice: false, useArtifacts: true, useText: true };
   if (mode === "reading") return { useVoice: false, useArtifacts: false, useText: true };
   if (mode === "blended") return { useVoice: true, useArtifacts: true, useText: true };
 
-  // auto mode — use detected weights
+  // auto mode — use detected weights, but require clear signal before enabling voice
   const dominant = getDominantModality(weights);
   const blended = isBlended(weights);
 
-  if (blended) return { useVoice: true, useArtifacts: true, useText: true };
+  if (blended && weights.auditory > 0.4) return { useVoice: true, useArtifacts: true, useText: true };
+  if (blended) return { useVoice: false, useArtifacts: true, useText: true };
 
   return {
-    useVoice: dominant === "auditory" || weights.auditory > 0.3,
-    useArtifacts: dominant === "visual" || weights.visual > 0.3,
+    useVoice: dominant === "auditory" && weights.auditory > 0.4,
+    useArtifacts: dominant === "visual" || weights.visual > 0.35,
     useText: true,
   };
 }
